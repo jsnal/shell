@@ -1,6 +1,15 @@
 #include "exec.h"
 
-int exec_command(struct Command *cmd)
+void close_pipes(int (*pipes)[2], int count)
+{
+  for (unsigned int i = 0; i < count; i++)
+  {
+    close(pipes[i][0]);
+    close(pipes[i][1]);
+  }
+}
+
+int exec_command(struct Commands* cmds, struct Command *cmd, int (*pipes)[2])
 {
   struct Builtin *builtin;
   if ((builtin = check_builtin(cmd)) != NULL)
@@ -22,8 +31,11 @@ int exec_command(struct Command *cmd)
     if (input_fd != -1 && input_fd != STDIN_FILENO)
       dup2(input_fd, STDIN_FILENO);
 
-    if (output_fd != -1 && output_fd != STDIN_FILENO)
-      dup2(output_fd, STDIN_FILENO);
+    if (output_fd != -1 && output_fd != STDOUT_FILENO)
+      dup2(output_fd, STDOUT_FILENO);
+
+    if (pipes != NULL)
+      close_pipes(pipes, cmds->count - 1);
 
     execvp(cmd->name, cmd->argv);
 
@@ -55,12 +67,52 @@ int exec_commands(struct Commands *cmds)
   {
     cmds->list[0]->fds[STDIN_FILENO] = STDIN_FILENO;
     cmds->list[0]->fds[STDOUT_FILENO] = STDOUT_FILENO;
-    exec_ret = exec_command(cmds->list[0]);
+    exec_ret = exec_command(cmds, cmds->list[0], NULL);
     wait(NULL);
   }
   else
   {
-    printf("has pipes!\n");
+    unsigned int pipe_count = cmds->count - 1;
+
+    struct Builtin *builtin;
+    for (unsigned int i = 0; i < cmds->count; i++)
+      if ((builtin = check_builtin(cmds->list[i])) != NULL)
+        fprintf(stderr, "error: exec_commands: built-ins in pipeline not supported.\n");
+
+    int (*pipes)[2] = calloc(pipe_count * sizeof(int[2]), 1);
+
+    if (pipes == NULL)
+    {
+      fprintf(stderr, "error: exec_commands: calloc failed\n");
+      return 0;
+    }
+
+    cmds->list[0]->fds[STDIN_FILENO] = STDIN_FILENO;
+    for (unsigned int i = 1; i < cmds->count; i++)
+    {
+      if (pipe(pipes[i - 1]) == -1)
+      {
+        fprintf(stderr, "error: exec_commands: creating pipe failed.\n");
+        cleanup_commands(commands);
+        close_pipes(pipes, pipe_count);
+        free(pipes);
+        exit(EXIT_FAILURE);
+      }
+
+      cmds->list[i - 1]->fds[STDOUT_FILENO] = pipes[i - 1][1];
+      cmds->list[i]->fds[STDIN_FILENO] = pipes[i - 1][0];
+    }
+    cmds->list[pipe_count]->fds[STDOUT_FILENO] = STDOUT_FILENO;
+
+    for (unsigned int i = 0; i < cmds->count; i++)
+      exec_ret = exec_command(cmds, cmds->list[i], pipes);
+
+    close_pipes(pipes, pipe_count);
+
+    for (unsigned int i = 0; i < cmds->count; ++i)
+      wait(NULL);
+
+    free(pipes);
   }
 
   return exec_ret;
