@@ -6,6 +6,6 @@
 #include "builtin.h"
 #include "command.h"
 
-int exec_commands(struct Commands*);
+int exec_commands(struct Command*);
 
 #endif

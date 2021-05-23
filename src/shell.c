@@ -33,7 +33,7 @@ void set_system_environment_variables()
 void clean()
 {
   free(line);
-  cleanup_commands(commands);
+  cleanup_commands();
 }
 
 void exit_clean(int code)
@@ -59,37 +59,35 @@ struct Command *parse_command(char *line)
 
   c->name = c->argv[0];
   c->argc = lineTokenCount;
+  c->next = NULL;
+  c->prev = NULL;
   return c;
 }
 
-struct Commands *parse_line(char *line)
+int parse_line(char *line)
 {
-  unsigned int commandCount = 0, count = 0;
-  char *commandToken, *savePtr, *lineCopy = line;
+  struct Command *next;
+  char *commandToken, *savePtr;
 
-  while (*lineCopy != '\0')
+  // Set the front of the LinkedList
+  commandToken = strtok_r(line, "|", &savePtr);
+  if (!commandToken)
+    return -1;
+
+  command = parse_command(commandToken);
+  next = command;
+
+  // Fill out the rest of the LinkedList if it exists
+  commandToken = strtok_r(NULL, "|", &savePtr);
+  while(commandToken != NULL)
   {
-    if (*lineCopy == '|')
-      commandCount++;
-    lineCopy++;
+    next->next = parse_command(commandToken);
+    next->next->prev = next;
+    next = next->next;
+    commandToken = strtok_r(NULL, "|", &savePtr);
   }
 
-  commandCount++;
-  commands = calloc(sizeof(struct Commands) + commandCount * sizeof(struct Command*), 1);
-
-  if (commands == NULL)
-  {
-    fprintf(stderr, "error: parse_line: calloc failed\n");
-    exit_clean(EXIT_FAILURE);
-  }
-
-  for (commandToken = strtok_r(line, "|", &savePtr);
-       commandToken;
-       commandToken = strtok_r(NULL, "|", &savePtr))
-    commands->list[count++] = parse_command(commandToken);
-
-  commands->count = commandCount;
-  return commands;
+  return 0;
 }
 
 char *read_line(void)
@@ -135,12 +133,22 @@ int shell()
 
     if (!is_empty_line(line))
     {
-      commands = parse_line(line);
-      command_ret = exec_commands(commands);
-      cleanup_commands(commands);
+      if (parse_line(line) == -1)
+        fprintf(stderr, "error: problem parsing line\n");
+
+      /* struct Command *c = command; */
+      /* while (c != NULL) */
+      /* { */
+      /*   printf("command: %s\n", c->name); */
+      /*   c = c->next; */
+      /* } */
+
+      command_ret = exec_commands(command);
+      cleanup_commands();
     }
 
     free(line);
+    /* printf("command return: %d\n", command_ret); */
 
     if (command_ret == -1)
       break;

@@ -11,14 +11,17 @@ struct Command {
   char *name;
   char *argv[1024];
   int fds[2];
+  struct Command *next;
+  struct Command *prev;
 };
 
-struct Commands {
-  int count;
-  struct Command *list[];
-};
+// struct Commands {
+//   int count;
+//   struct Command *list[];
+// };
 
-struct Commands *commands;
+struct Command *command;
+int command_count;
 
-void cleanup_commands(struct Commands*);
+void cleanup_commands();
 #endif

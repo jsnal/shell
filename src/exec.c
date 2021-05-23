@@ -9,7 +9,7 @@ void close_pipes(int (*pipes)[2], int count)
   }
 }
 
-int exec_command(struct Commands* cmds, struct Command *cmd, int (*pipes)[2])
+int exec_command(struct Command *cmd, int pipe_count, int (*pipes)[2])
 {
   struct Builtin *builtin;
   if ((builtin = check_builtin(cmd)) != NULL)
@@ -35,7 +35,7 @@ int exec_command(struct Commands* cmds, struct Command *cmd, int (*pipes)[2])
       dup2(output_fd, STDOUT_FILENO);
 
     if (pipes != NULL)
-      close_pipes(pipes, cmds->count - 1);
+      close_pipes(pipes, pipe_count);
 
     execvp(cmd->name, cmd->argv);
 
@@ -52,31 +52,40 @@ int exec_command(struct Commands* cmds, struct Command *cmd, int (*pipes)[2])
         break;
     }
 
-    cleanup_commands(commands);
+    cleanup_commands();
     _exit(EXIT_FAILURE);
   }
 
   return cmd_pid;
 }
 
-int exec_commands(struct Commands *cmds)
+int exec_commands(struct Command *cmd)
 {
+  struct Command *c;
   unsigned int exec_ret = 0;
+  unsigned int command_count = 0;
 
-  if (cmds->count == 1)
+  c = command;
+  while (c != NULL)
   {
-    cmds->list[0]->fds[STDIN_FILENO] = STDIN_FILENO;
-    cmds->list[0]->fds[STDOUT_FILENO] = STDOUT_FILENO;
-    exec_ret = exec_command(cmds, cmds->list[0], NULL);
+    command_count++;
+    c = c->next;
+  }
+
+  if (command_count == 1)
+  {
+    command->fds[STDIN_FILENO] = STDIN_FILENO;
+    command->fds[STDOUT_FILENO] = STDOUT_FILENO;
+    exec_ret = exec_command(command, 0, NULL);
     wait(NULL);
   }
   else
   {
-    unsigned int pipe_count = cmds->count - 1;
+    unsigned int pipe_count = command_count - 1, counter = 1;
 
     struct Builtin *builtin;
-    for (unsigned int i = 0; i < cmds->count; i++)
-      if ((builtin = check_builtin(cmds->list[i])) != NULL)
+    for (c = command; c != NULL; c = c->next)
+      if ((builtin = check_builtin(c)) != NULL)
         fprintf(stderr, "error: exec_commands: built-ins in pipeline not supported.\n");
 
     int (*pipes)[2] = calloc(pipe_count * sizeof(int[2]), 1);
@@ -87,29 +96,32 @@ int exec_commands(struct Commands *cmds)
       return 0;
     }
 
-    cmds->list[0]->fds[STDIN_FILENO] = STDIN_FILENO;
-    for (unsigned int i = 1; i < cmds->count; i++)
+    struct Command *last = command;
+    command->fds[STDIN_FILENO] = STDIN_FILENO;
+    for (c = command->next; c != NULL; c = c->next)
     {
-      if (pipe(pipes[i - 1]) == -1)
+      if (pipe(pipes[counter - 1]) == -1)
       {
         fprintf(stderr, "error: exec_commands: creating pipe failed.\n");
-        cleanup_commands(commands);
+        cleanup_commands();
         close_pipes(pipes, pipe_count);
         free(pipes);
         exit(EXIT_FAILURE);
       }
 
-      cmds->list[i - 1]->fds[STDOUT_FILENO] = pipes[i - 1][1];
-      cmds->list[i]->fds[STDIN_FILENO] = pipes[i - 1][0];
+      c->prev->fds[STDOUT_FILENO] = pipes[counter - 1][1];
+      c->fds[STDIN_FILENO] = pipes[counter - 1][0];
+      counter++;
+      last = c;
     }
-    cmds->list[pipe_count]->fds[STDOUT_FILENO] = STDOUT_FILENO;
+    last->fds[STDOUT_FILENO] = STDOUT_FILENO;
 
-    for (unsigned int i = 0; i < cmds->count; i++)
-      exec_ret = exec_command(cmds, cmds->list[i], pipes);
+    for (c = command; c != NULL; c = c->next)
+      exec_ret = exec_command(c, pipe_count, pipes);
 
     close_pipes(pipes, pipe_count);
 
-    for (unsigned int i = 0; i < cmds->count; ++i)
+    for (c = command; c != NULL; c = c->next)
       wait(NULL);
 
     free(pipes);

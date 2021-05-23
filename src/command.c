@@ -1,9 +1,13 @@
 #include "command.h"
 
-void cleanup_commands(struct Commands *cmds)
+void cleanup_commands()
 {
-  for (unsigned int i = 0; i < cmds->count; i++)
-    free(cmds->list[i]);
+  struct Command *head;
 
-  free(cmds);
+  while (command != NULL)
+  {
+    head = command;
+    command = command->next;
+    free(head);
+  }
 }
