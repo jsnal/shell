@@ -13,6 +13,14 @@
 #include "exec.h"
 #include "command.h"
 
+#define HISTORY_SIZE 50
+
+struct History {
+  unsigned int top;
+  char *list[HISTORY_SIZE];
+};
+
 int shell();
+struct History *history;
 
 #endif

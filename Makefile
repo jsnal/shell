@@ -3,6 +3,9 @@ CC = gcc
 NAME = shell
 CFLAGS = -Wall -O2 -Werror=format-security -ggdb3
 
+# For debug printing only!
+# CFLAGS += -DDEBUG
+
 SOURCES = \
 					src/main.c \
 					src/builtin.c \

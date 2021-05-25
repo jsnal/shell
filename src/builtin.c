@@ -41,10 +41,23 @@ int handle_exit(struct Command *cmd)
   return -1;
 }
 
+int handle_history(struct Command *cmd)
+{
+  struct History *h = history;
+
+  for (unsigned int i = 0; h->list[i] != NULL; i++)
+  {
+    printf(" %d  %s\n", i + 1, h->list[i]);
+  }
+
+  return 0;
+}
+
 static struct Builtin builtin[] = {
-  { "cd",     handle_cd },
-  { "logout", handle_exit },
-  { "exit",   handle_exit }
+  { "cd",      handle_cd },
+  { "logout",  handle_exit },
+  { "exit",    handle_exit },
+  { "history", handle_history }
 };
 
 int exec_builtin(struct Builtin *builtin, struct Command *cmd)

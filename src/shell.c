@@ -2,9 +2,25 @@
 
 char *line;
 
-/*
- * Check for blank or space only line.
- */
+void cleanup_history()
+{
+  for (unsigned int i = 0; history->list[i] != NULL; i++)
+    free(history->list[i]);
+  free(history);
+}
+
+void clean()
+{
+  if (command) cleanup_commands();
+  if (history) cleanup_history();
+}
+
+void exit_clean(int code)
+{
+  clean();
+  exit(code);
+}
+
 int is_empty_line(char *line)
 {
   int len = strlen(line);
@@ -30,16 +46,46 @@ void set_system_environment_variables()
     SYS_HOME = getpwuid(getuid())->pw_dir;
 }
 
-void clean()
+int initialize_history()
 {
-  free(line);
-  cleanup_commands();
+  history = (struct History*) malloc(sizeof(struct History));
+
+  if (history == NULL)
+    return -1;
+
+  for (unsigned int i = 0; i < HISTORY_SIZE; i++)
+    history->list[i] = NULL;
+
+  history->top = 0;
+  return 0;
 }
 
-void exit_clean(int code)
+int push_history(char *cmd)
 {
-  clean();
-  exit(code);
+  if (history->top == HISTORY_SIZE - 1)
+  {
+    fprintf(stderr, "error: history: full!!");
+    return -1;
+  }
+
+  char *c = malloc(strlen(cmd) + 1);
+  strcpy(c, cmd);
+
+  history->list[history->top] = c;
+  history->top++;
+  return 0;
+}
+
+int get_command_operator(char *token)
+{
+  printf("call\n");
+  unsigned int i = 0;
+  while (token[i] != '\0')
+  {
+    printf("%c\n", token[i]);
+    i++;
+  }
+  return 0;
 }
 
 struct Command *parse_command(char *line)
@@ -55,7 +101,10 @@ struct Command *parse_command(char *line)
   }
 
   for (lineToken = strtok(line, " "); lineToken; lineToken = strtok(NULL, " "))
+  {
+    /* get_command_operator(lineToken); */
     c->argv[lineTokenCount++] = lineToken;
+  }
 
   c->name = c->argv[0];
   c->argc = lineTokenCount;
@@ -93,11 +142,11 @@ int parse_line(char *line)
 char *read_line(void)
 {
   int buf_size = 128;
-  char *line = malloc(buf_size * sizeof(char));
+  char *ret_line = malloc(buf_size * sizeof(char));
   unsigned int i = 0;
   char c;
 
-  if (line == NULL)
+  if (ret_line == NULL)
   {
     fprintf(stderr, "error: read_command: malloc failed\n");
     exit_clean(EXIT_FAILURE);
@@ -107,23 +156,26 @@ char *read_line(void)
   {
     if (c == EOF)
     {
-      free(line);
-      exit(EXIT_SUCCESS);
+      free(ret_line);
+      exit_clean(EXIT_SUCCESS);
     }
 
     if (i >= buf_size)
-      line = realloc(line, buf_size * 2);
+      ret_line = realloc(ret_line, buf_size * 2);
 
-    line[i++] = c;
+    ret_line[i++] = c;
   }
 
-  line[i] = '\0';
-  return line;
+  ret_line[i] = '\0';
+  return ret_line;
 }
 
 int shell()
 {
   unsigned int command_ret = 0;
+
+  if (initialize_history() == -1)
+    fprintf(stderr, "error: history: unable to initialize history\n");
 
   for(;;)
   {
@@ -131,28 +183,36 @@ int shell()
     fputs("$ ", stdout);
     line = read_line();
 
+
     if (!is_empty_line(line))
     {
+      push_history(line);
       if (parse_line(line) == -1)
         fprintf(stderr, "error: problem parsing line\n");
 
-      /* struct Command *c = command; */
-      /* while (c != NULL) */
-      /* { */
-      /*   printf("command: %s\n", c->name); */
-      /*   c = c->next; */
-      /* } */
+#if DEBUG
+      struct Command *c = command;
+      while (c != NULL)
+      {
+        printf("command: %s: argc: %d\n", c->name, c->argc);
+        c = c->next;
+      }
+#endif
 
       command_ret = exec_commands(command);
       cleanup_commands();
     }
 
     free(line);
-    /* printf("command return: %d\n", command_ret); */
+
+#if DEBUG
+    printf("command return: %d\n", command_ret);
+#endif
 
     if (command_ret == -1)
       break;
   }
 
+  cleanup_history();
   return EXIT_SUCCESS;
 }

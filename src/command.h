@@ -6,22 +6,25 @@
 char *SYS_PATH;
 char *SYS_HOME;
 
+enum CommandOperators {
+  NORMAL,
+  REDIRECT_IN,
+  REDIRECT_OUT,
+  REDIRECT_ERROR,
+  REDIRECT_ALLOUT,
+};
+
 struct Command {
   unsigned int argc;
   char *name;
   char *argv[1024];
+  char *redirects[3];
   int fds[2];
   struct Command *next;
   struct Command *prev;
 };
 
-// struct Commands {
-//   int count;
-//   struct Command *list[];
-// };
-
 struct Command *command;
-int command_count;
 
 void cleanup_commands();
 #endif
