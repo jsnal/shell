@@ -13,7 +13,7 @@
 #include "exec.h"
 #include "command.h"
 
-#define HISTORY_SIZE 50
+#define HISTORY_SIZE 5
 
 struct History {
   unsigned int top;

@@ -62,17 +62,30 @@ int initialize_history()
 
 int push_history(char *cmd)
 {
-  if (history->top == HISTORY_SIZE - 1)
-  {
-    fprintf(stderr, "error: history: full!!");
-    return -1;
-  }
-
-  char *c = malloc(strlen(cmd) + 1);
+  char *c = (char*) malloc(strlen(cmd) + 1);
   strcpy(c, cmd);
 
   history->list[history->top] = c;
   history->top++;
+
+  if (history->top == HISTORY_SIZE)
+  {
+    for (unsigned int i = 0; history->list[i] != NULL; i++)
+    {
+      printf(" %d  %s\n", i + 1, history->list[i]);
+    }
+
+    /* free(history->list[0]); */
+    for (unsigned int i = 0; i < HISTORY_SIZE - 2; i++)
+      history->list[i] = history->list[i + 1];
+
+    history->list[HISTORY_SIZE - 1] = NULL;
+    history->list[HISTORY_SIZE - 1] = c;
+    /* (char*) malloc(strlen(cmd) + 1); */
+    /* strcpy(history->list[HISTORY_SIZE - 1], cmd); */
+    return 0;
+  }
+
   return 0;
 }
 

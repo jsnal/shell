@@ -43,11 +43,9 @@ int handle_exit(struct Command *cmd)
 
 int handle_history(struct Command *cmd)
 {
-  struct History *h = history;
-
-  for (unsigned int i = 0; h->list[i] != NULL; i++)
+  for (unsigned int i = 0; history->list[i] != NULL; i++)
   {
-    printf(" %d  %s\n", i + 1, h->list[i]);
+    printf(" %d  %s\n", i + 1, history->list[i]);
   }
 
   return 0;
