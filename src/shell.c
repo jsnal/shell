@@ -46,49 +46,6 @@ void set_system_environment_variables()
     SYS_HOME = getpwuid(getuid())->pw_dir;
 }
 
-int initialize_history()
-{
-  history = (struct History*) malloc(sizeof(struct History));
-
-  if (history == NULL)
-    return -1;
-
-  for (unsigned int i = 0; i < HISTORY_SIZE; i++)
-    history->list[i] = NULL;
-
-  history->top = 0;
-  return 0;
-}
-
-int push_history(char *cmd)
-{
-  char *c = (char*) malloc(strlen(cmd) + 1);
-  strcpy(c, cmd);
-
-  history->list[history->top] = c;
-  history->top++;
-
-  if (history->top == HISTORY_SIZE)
-  {
-    for (unsigned int i = 0; history->list[i] != NULL; i++)
-    {
-      printf(" %d  %s\n", i + 1, history->list[i]);
-    }
-
-    /* free(history->list[0]); */
-    for (unsigned int i = 0; i < HISTORY_SIZE - 2; i++)
-      history->list[i] = history->list[i + 1];
-
-    history->list[HISTORY_SIZE - 1] = NULL;
-    history->list[HISTORY_SIZE - 1] = c;
-    /* (char*) malloc(strlen(cmd) + 1); */
-    /* strcpy(history->list[HISTORY_SIZE - 1], cmd); */
-    return 0;
-  }
-
-  return 0;
-}
-
 int get_command_operator(char *token)
 {
   printf("call\n");
@@ -186,6 +143,7 @@ char *read_line(void)
 int shell()
 {
   unsigned int command_ret = 0;
+  char *history_line;
 
   if (initialize_history() == -1)
     fprintf(stderr, "error: history: unable to initialize history\n");
@@ -199,7 +157,7 @@ int shell()
 
     if (!is_empty_line(line))
     {
-      push_history(line);
+      history_line = strdup(line);
       if (parse_line(line) == -1)
         fprintf(stderr, "error: problem parsing line\n");
 
@@ -214,6 +172,9 @@ int shell()
 
       command_ret = exec_commands(command);
       cleanup_commands();
+
+      push_history(history_line);
+      free(history_line);
     }
 
     free(line);

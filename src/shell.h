@@ -9,18 +9,13 @@
 #include <errno.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include "exec.h"
+#include "history.h"
 #include "command.h"
 
-#define HISTORY_SIZE 5
-
-struct History {
-  unsigned int top;
-  char *list[HISTORY_SIZE];
-};
-
 int shell();
-struct History *history;
 
 #endif

@@ -2,6 +2,7 @@
 #define BUILTIN_H
 
 #include "shell.h"
+#include "history.h"
 #include "command.h"
 
 struct Builtin {

@@ -1,5 +1,6 @@
 #include "builtin.h"
 
+// TODO: Add PWD and OLDPWD env
 int handle_cd(struct Command *cmd)
 {
   unsigned int cd_ret = 0;

@@ -10,6 +10,7 @@ SOURCES = \
 					src/main.c \
 					src/builtin.c \
 					src/exec.c \
+					src/history.c \
 					src/command.c \
 					src/shell.c
 
