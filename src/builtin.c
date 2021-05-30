@@ -1,9 +1,9 @@
 #include "builtin.h"
 
-// TODO: Add PWD and OLDPWD env
 int handle_cd(struct Command *cmd)
 {
   unsigned int cd_ret = 0;
+  char *cwd;
 
   if (cmd->argc > 2)
   {
@@ -12,8 +12,14 @@ int handle_cd(struct Command *cmd)
   }
 
   if (cmd->argc == 1)
-  {
     cd_ret = chdir(SYS_HOME);
+  else if (strcmp(cmd->argv[1], "-") == 0)
+  {
+    if (OLDPWD == NULL)
+      printf("cd: no last working directory");
+
+    cd_ret = chdir(OLDPWD);
+    printf("%s\n", OLDPWD);
   }
   else
     cd_ret = chdir(cmd->argv[1]);
@@ -33,6 +39,11 @@ int handle_cd(struct Command *cmd)
 
     return 1;
   }
+
+  setenv("OLDPWD", getenv("PWD"), 1);
+  if ((cwd = getcwd(NULL, 0)) != NULL)
+    setenv("PWD", cwd, 1);
+
   return 0;
 }
 

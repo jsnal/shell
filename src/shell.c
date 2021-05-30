@@ -37,13 +37,25 @@ int is_empty_line(char *line)
   return 1;
 }
 
+void initialize_system_environment_variables()
+{
+  char *cwd;
+  if ((cwd = getcwd(NULL, 0)) != NULL)
+    setenv("PWD", cwd, 1);
+
+  if ((SYS_HOME = getenv("HOME")) == NULL)
+    SYS_HOME = getpwuid(getuid())->pw_dir;
+
+  setenv("OLDPWD", SYS_HOME, 1);
+}
+
 void set_system_environment_variables()
 {
   if ((SYS_PATH = getenv("PATH")) == NULL)
     SYS_PATH = "/bin";
 
-  if ((SYS_HOME = getenv("HOME")) == NULL)
-    SYS_HOME = getpwuid(getuid())->pw_dir;
+  PWD = getenv("PWD");
+  OLDPWD = getenv("OLDPWD");
 }
 
 int get_command_operator(char *token)
@@ -148,10 +160,12 @@ int shell()
   if (initialize_history() == -1)
     fprintf(stderr, "error: history: unable to initialize history\n");
 
+  initialize_system_environment_variables();
+
   for(;;)
   {
     set_system_environment_variables();
-    fputs("$ ", stdout);
+    printf("%s$ ", PWD);
     line = read_line();
 
 

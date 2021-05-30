@@ -5,6 +5,8 @@
 
 char *SYS_PATH;
 char *SYS_HOME;
+char *PWD;
+char *OLDPWD;
 
 enum CommandOperators {
   NORMAL,
