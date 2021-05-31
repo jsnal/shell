@@ -43,6 +43,7 @@ int handle_cd(struct Command *cmd)
   setenv("OLDPWD", getenv("PWD"), 1);
   if ((cwd = getcwd(NULL, 0)) != NULL)
     setenv("PWD", cwd, 1);
+  free(cwd);
 
   return 0;
 }

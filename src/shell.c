@@ -1,6 +1,20 @@
 #include "shell.h"
 
 char *line;
+static struct CommandOperators commandOperators[] = {
+  { REDIRECT_OUT,   ">" },
+  { REDIRECT_IN,    "<" },
+  { REDIRECT_ERROR, "2>" },
+  { REDIRECT_ALL,   "&>" },
+};
+
+void cleanup_tokenized_command(char** tokenizedCommand)
+{
+  for (unsigned int i = 0; *tokenizedCommand[i] != '\0'; i++)
+    free(tokenizedCommand[i]);
+
+  free(tokenizedCommand);
+}
 
 void cleanup_history()
 {
@@ -42,6 +56,7 @@ void initialize_system_environment_variables()
   char *cwd;
   if ((cwd = getcwd(NULL, 0)) != NULL)
     setenv("PWD", cwd, 1);
+  free(cwd);
 
   if ((SYS_HOME = getenv("HOME")) == NULL)
     SYS_HOME = getpwuid(getuid())->pw_dir;
@@ -58,22 +73,74 @@ void set_system_environment_variables()
   OLDPWD = getenv("OLDPWD");
 }
 
-int get_command_operator(char *token)
+char** tokenize_command(char *line)
 {
-  printf("call\n");
-  unsigned int i = 0;
-  while (token[i] != '\0')
+  char token[128];
+  unsigned int commandCount = 0, tokenCounter = 0;
+  unsigned int lineLength = strlen(line);
+  char **tokenized = malloc(256 * sizeof(char*));
+  memset(token, 0, 128);
+
+  for (unsigned int i = 0; i < lineLength; i++)
   {
-    printf("%c\n", token[i]);
-    i++;
+    // Ignore about leading or trailing whitespace
+    if ((i == 0 || i == lineLength) && line[i] == ' ')
+      continue;
+
+    if (line[i] == ' ')
+    {
+      if (token[0] != 0)
+      {
+        tokenized[commandCount++] = strdup(token);
+        memset(token, 0, 128);
+        tokenCounter = 0;
+      }
+      continue;
+    }
+    else if (line[i] == '>' || line[i] == '<')
+    {
+      if (token[0] != 0)
+      {
+        tokenized[commandCount++] = strdup(token);
+        memset(token, 0, 128);
+        tokenCounter = 0;
+      }
+
+      token[0] = line[i]; token[1] = '\0';
+      tokenized[commandCount++] = strdup(token);
+      memset(token, 0, 128);
+      continue;
+    }
+    else if ((line[i] == '2' || line[i] == '&') && line[i + 1] == '>')
+    {
+      if (token[0] != 0)
+      {
+        tokenized[commandCount++] = strdup(token);
+        memset(token, 0, 128);
+        tokenCounter = 0;
+      }
+
+      token[0] = line[i]; token[1] = line[i + 1]; token[2] = '\0';
+      tokenized[commandCount++] = strdup(token);
+      memset(token, 0, 128);
+      i++;
+      continue;
+    }
+
+    token[tokenCounter++] = line[i];
   }
-  return 0;
+
+  if (token[0] != 0)
+    tokenized[commandCount++] = strdup(token);
+
+  tokenized[commandCount] = "\0";
+
+  return tokenized;
 }
 
 struct Command *parse_command(char *line)
 {
-  char *lineToken;
-  unsigned int lineTokenCount = 0;
+  unsigned int commandCount = 0;
   struct Command *c = calloc(sizeof(struct Command), 1);
 
   if (c == NULL)
@@ -82,14 +149,30 @@ struct Command *parse_command(char *line)
     exit_clean(EXIT_FAILURE);
   }
 
-  for (lineToken = strtok(line, " "); lineToken; lineToken = strtok(NULL, " "))
+  char** tokenizedCommand = tokenize_command(line);
+  for (unsigned int i = 0; *tokenizedCommand[i] != '\0'; i++)
   {
-    /* get_command_operator(lineToken); */
-    c->argv[lineTokenCount++] = lineToken;
+    for (unsigned int j = 0; j < OPERATORS_SIZE; j++)
+    {
+      if (strcmp(tokenizedCommand[i], commandOperators[j].token) == 0)
+      {
+        if (tokenizedCommand[i + 1] == NULL)
+          fprintf(stderr, "error: parse_command: invalid redirect syntax\n");
+
+        c->redirects[commandOperators[j].name] = strdup(tokenizedCommand[i + 1]);
+        i++;
+        goto command_operator_found;
+      }
+    }
+
+    c->argv[commandCount++] = strdup(tokenizedCommand[i]);
+command_operator_found:;
   }
 
+  cleanup_tokenized_command(tokenizedCommand);
+
   c->name = c->argv[0];
-  c->argc = lineTokenCount;
+  c->argc = commandCount;
   c->next = NULL;
   c->prev = NULL;
   return c;
@@ -167,7 +250,6 @@ int shell()
     set_system_environment_variables();
     printf("%s$ ", PWD);
     line = read_line();
-
 
     if (!is_empty_line(line))
     {

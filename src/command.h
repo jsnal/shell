@@ -3,27 +3,33 @@
 
 #include <stdlib.h>
 
+#define OPERATORS_SIZE 4
+
 char *SYS_PATH;
 char *SYS_HOME;
 char *PWD;
 char *OLDPWD;
 
-enum CommandOperators {
-  NORMAL,
-  REDIRECT_IN,
+enum Operators {
   REDIRECT_OUT,
+  REDIRECT_IN,
   REDIRECT_ERROR,
-  REDIRECT_ALLOUT,
+  REDIRECT_ALL
 };
 
 struct Command {
   unsigned int argc;
   char *name;
   char *argv[1024];
-  char *redirects[3];
+  char *redirects[OPERATORS_SIZE];
   int fds[2];
   struct Command *next;
   struct Command *prev;
+};
+
+struct CommandOperators {
+  enum Operators name;
+  char *token;
 };
 
 struct Command *command;
