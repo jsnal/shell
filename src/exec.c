@@ -9,6 +9,59 @@ void close_pipes(int (*pipes)[2], int count)
   }
 }
 
+void handle_redirect_in(char *file)
+{
+  int fd_in = open(file, O_RDONLY);
+
+  if (fd_in == -1)
+  {
+    fprintf(stderr, "error: handle_redirect_in: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fd_in, STDIN_FILENO);
+}
+
+void handle_redirect_out(char *file)
+{
+  int fd_out = open(file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+
+  if (fd_out == -1)
+  {
+    fprintf(stderr, "error: handle_redirect_out: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fd_out, STDOUT_FILENO);
+}
+
+void handle_redirect_all(char *file)
+{
+  int fd_out = open(file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+
+  if (fd_out == -1)
+  {
+    fprintf(stderr, "error: handle_redirect_all: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fd_out, STDOUT_FILENO);
+  dup2(fd_out, STDERR_FILENO);
+}
+
+void handle_redirect_error(char *file)
+{
+  int fd_out = open(file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+
+  if (fd_out == -1)
+  {
+    fprintf(stderr, "error: handle_redirect_error: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fd_out, STDERR_FILENO);
+}
+
 int exec_command(struct Command *cmd, int pipe_count, int (*pipes)[2])
 {
   struct Builtin *builtin;
@@ -37,18 +90,41 @@ int exec_command(struct Command *cmd, int pipe_count, int (*pipes)[2])
     if (pipes != NULL)
       close_pipes(pipes, pipe_count);
 
+    for (unsigned int operator = 0; operator < OPERATORS_SIZE; operator++)
+    {
+      /* printf("type: %d to %s\n", operator, cmd->redirects[operator]); */
+      if (cmd->redirects[operator] != NULL)
+      {
+        switch (operator)
+        {
+          case REDIRECT_OUT:
+            handle_redirect_out(cmd->redirects[operator]);
+            break;
+          case REDIRECT_IN:
+            handle_redirect_in(cmd->redirects[operator]);
+            break;
+          case REDIRECT_ERROR:
+            handle_redirect_error(cmd->redirects[operator]);
+            break;
+          case REDIRECT_ALL:
+            handle_redirect_all(cmd->redirects[operator]);
+            break;
+        }
+      }
+    }
+
     execvp(cmd->name, cmd->argv);
 
     switch(errno)
     {
       case ENOENT:
-        fprintf(stderr, "shell: command not found: %s\n", cmd->name);
+        fprintf(stderr, "error: exec_command: command not found: %s\n", cmd->name);
         break;
       case EACCES:
-        fprintf(stderr, "shell: permission denied: %s\n", cmd->name);
+        fprintf(stderr, "error: exec_command: permission denied: %s\n", cmd->name);
         break;
       default:
-        fprintf(stderr, "shell: %s\n", strerror(errno));
+        fprintf(stderr, "error: exec_command: %s\n", strerror(errno));
         break;
     }
 
