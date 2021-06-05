@@ -7,11 +7,12 @@ CFLAGS = -Wall -O2 -Werror=format-security -ggdb3
 # CFLAGS += -DDEBUG
 
 SOURCES = \
-					src/main.c \
 					src/builtin.c \
+					src/command.c \
 					src/exec.c \
 					src/history.c \
-					src/command.c \
+					src/main.c \
+					src/redirect.c \
 					src/shell.c
 
 OBJECTS = ${SOURCES:.c=.o}

@@ -2,10 +2,12 @@
 
 char *line;
 static struct CommandOperators commandOperators[] = {
-  { REDIRECT_OUT,   ">" },
-  { REDIRECT_IN,    "<" },
-  { REDIRECT_ERROR, "2>" },
-  { REDIRECT_ALL,   "&>" },
+  { REDIRECT_OUT,          ">" },
+  { REDIRECT_OUT_APPEND,   ">>" },
+  { REDIRECT_IN,           "<" },
+  { REDIRECT_ERROR,        "2>" },
+  { REDIRECT_ERROR_APPEND, "2>>" },
+  { REDIRECT_ALL,          "&>" }
 };
 
 void cleanup_tokenized_command(char** tokenizedCommand)
@@ -97,7 +99,7 @@ char** tokenize_command(char *line)
       }
       continue;
     }
-    else if (line[i] == '>' || line[i] == '<')
+    else if (line[i] == '2' && line[i + 1] == '>' && line[i + 2] == '>')
     {
       if (token[0] != 0)
       {
@@ -106,12 +108,14 @@ char** tokenize_command(char *line)
         tokenCounter = 0;
       }
 
-      token[0] = line[i]; token[1] = '\0';
+      token[0] = line[i]; token[1] = line[i + 1]; token[2] = line[i + 2]; token[3] = '\0';
       tokenized[commandCount++] = strdup(token);
       memset(token, 0, 128);
+      i++;
       continue;
     }
-    else if ((line[i] == '2' || line[i] == '&') && line[i + 1] == '>')
+    else if (((line[i] == '2' || line[i] == '&') && line[i + 1] == '>') ||
+        (line[i] == '>' && line[i + 1] == '>'))
     {
       if (token[0] != 0)
       {
@@ -124,6 +128,20 @@ char** tokenize_command(char *line)
       tokenized[commandCount++] = strdup(token);
       memset(token, 0, 128);
       i++;
+      continue;
+    }
+    else if (line[i] == '>' || line[i] == '<')
+    {
+      if (token[0] != 0)
+      {
+        tokenized[commandCount++] = strdup(token);
+        memset(token, 0, 128);
+        tokenCounter = 0;
+      }
+
+      token[0] = line[i]; token[1] = '\0';
+      tokenized[commandCount++] = strdup(token);
+      memset(token, 0, 128);
       continue;
     }
 

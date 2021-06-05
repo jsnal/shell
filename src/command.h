@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#define OPERATORS_SIZE 4
+#define OPERATORS_SIZE 6
 
 char *SYS_PATH;
 char *SYS_HOME;
@@ -12,8 +12,10 @@ char *OLDPWD;
 
 enum Operators {
   REDIRECT_OUT,
+  REDIRECT_OUT_APPEND,
   REDIRECT_IN,
   REDIRECT_ERROR,
+  REDIRECT_ERROR_APPEND,
   REDIRECT_ALL
 };
 
