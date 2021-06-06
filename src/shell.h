@@ -5,6 +5,7 @@
 #include "execute.h"
 #include "history.h"
 #include "parse.h"
+#include "tokenize.h"
 
 int shell();
 

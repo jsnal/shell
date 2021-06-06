@@ -108,16 +108,25 @@ int shell()
 
     if (!is_empty_line(line))
     {
-      history_line = strdup(line);
-      if (parse_line(line) == -1)
-        goto no_execute;
+      struct Token *tokens = tokenize_line(line);
+      for (unsigned int i = 0; i < 256; i++)
+      {
+        if (tokens[i].data != NULL)
+          printf("%d: %s - %d\n", i, tokens[i].data, tokens[i].type);
+      }
 
-      command_ret = execute_commands(command);
-      cleanup_commands(command);
+      cleanup_tokens(tokens);
 
-no_execute:
-      push_history(history_line);
-      free(history_line);
+/*       history_line = strdup(line); */
+/*       if (parse_line(line) == -1) */
+/*         goto no_execute; */
+/*  */
+/*       command_ret = execute_commands(command); */
+/*       cleanup_commands(command); */
+/*  */
+/* no_execute: */
+/*       push_history(history_line); */
+/*       free(history_line); */
     }
 
     free(line);
