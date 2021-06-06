@@ -9,9 +9,10 @@ CFLAGS = -Wall -O2 -Werror=format-security -ggdb3
 SOURCES = \
 					src/builtin.c \
 					src/command.c \
-					src/exec.c \
+					src/execute.c \
 					src/history.c \
 					src/main.c \
+					src/parse.c \
 					src/redirect.c \
 					src/shell.c
 
