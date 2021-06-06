@@ -2,6 +2,7 @@
 
 struct Token *tokenize_line(char *line)
 {
+  state = Text;
   struct Token *tokens = calloc(TOKENS_LIMIT * sizeof(struct Token), 1);
   unsigned int lineLength = strlen(line), dataPosition = 0, tokenPosition = 0;
   char data[128];
@@ -29,35 +30,37 @@ struct Token *tokenize_line(char *line)
 
         COMMIT(Background);
         RETURN_START();
+      case Comment:
+        CONSUME();
+        if (line[i] == '\0')
+        {
+          COMMIT(Comment);
+          goto end_of_line;
+        }
+
+        TO(Comment);
+      case Empty:
+        if (line[i] == ' ' || line[i] == '\t')
+        {
+          TO(Empty);
+        }
+
+        COMMIT(Text)
+        RETURN_START();
       case Text:
         if (line[i] == ' ' || line[i] == '\t')
         {
           TO(Empty);
         }
 
-        if (line[i] == '|')
-        {
-          COMMIT_AND_CONSUME(Text);
-          TO(Pipe);
-        }
-
-        if (line[i] == '&')
-        {
-          COMMIT_AND_CONSUME(Text);
-          TO(Background);
-        }
-
-        if (line[i] == '>')
-        {
-          COMMIT_AND_CONSUME(Text);
-          TO(RedirectOut);
-        }
-
-        if (line[i] == '<')
-        {
-          COMMIT_AND_CONSUME(Text);
-          TO(RedirectIn);
-        }
+        if (line[i] == '\'') { COMMIT(Text); TO(TextLiteral); }
+        if (line[i] == '#')  { COMMIT_AND_CONSUME(Text); TO(Comment); }
+        if (line[i] == '~')  { COMMIT_AND_CONSUME(Text); TO(Tilde); }
+        if (line[i] == '|')  { COMMIT_AND_CONSUME(Text); TO(Pipe); }
+        if (line[i] == ';')  { COMMIT_AND_CONSUME(Text); TO(Semicolon); }
+        if (line[i] == '&')  { COMMIT_AND_CONSUME(Text); TO(Background); }
+        if (line[i] == '>')  { COMMIT_AND_CONSUME(Text); TO(RedirectOut); }
+        if (line[i] == '<')  { COMMIT_AND_CONSUME(Text); TO(RedirectIn); }
 
         if (line[i] == '2' && line[i + 1] == '>')
         {
@@ -73,14 +76,17 @@ struct Token *tokenize_line(char *line)
           goto end_of_line;
 
         TO(Text);
-      case Empty:
-        if (line[i] == ' ' || line[i] == '\t')
+
+      // FIXME: If there isn't a closing quote then we never know
+      case TextLiteral:
+        if (line[i] != '\'')
         {
-          TO(Empty);
+          CONSUME();
+          TO(TextLiteral);
         }
 
-        COMMIT(Text)
-        RETURN_START();
+        COMMIT(TextLiteral);
+        TO(Text);
       case Or:
         COMMIT(Or);
         RETURN_START();
@@ -131,6 +137,12 @@ struct Token *tokenize_line(char *line)
         RETURN_START();
       case RedirectOutAppend:
         COMMIT(RedirectOutAppend);
+        RETURN_START();
+      case Semicolon:
+        COMMIT(Semicolon);
+        RETURN_START();
+      case Tilde:
+        COMMIT(Tilde);
         RETURN_START();
       default:
         fprintf(stderr, "Entered unimplemented state.\n");

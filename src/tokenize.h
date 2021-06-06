@@ -33,6 +33,7 @@
 enum TokenState {
   And,
   Background,
+  Comment,
   Empty,
   Or,
   Pipe,
@@ -43,7 +44,10 @@ enum TokenState {
   RedirectInAppend,
   RedirectOut,
   RedirectOutAppend,
+  Semicolon,
   Text,
+  TextLiteral,
+  Tilde,
 };
 
 struct Token {
@@ -51,7 +55,7 @@ struct Token {
   enum TokenState type;
 };
 
-enum TokenState state = Text;
+enum TokenState state;
 struct Token *tokenize_line(char*);
 void cleanup_tokens(struct Token*);
 #endif
