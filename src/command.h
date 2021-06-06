@@ -36,5 +36,5 @@ struct CommandOperators {
 
 struct Command *command;
 
-void cleanup_commands();
+void cleanup_commands(struct Command*);
 #endif

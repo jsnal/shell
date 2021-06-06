@@ -81,7 +81,7 @@ int exec_command(struct Command *cmd, int pipe_count, int (*pipes)[2])
         break;
     }
 
-    cleanup_commands();
+    cleanup_commands(command);
     _exit(EXIT_FAILURE);
   }
 
@@ -132,7 +132,7 @@ int exec_commands(struct Command *cmd)
       if (pipe(pipes[counter - 1]) == -1)
       {
         fprintf(stderr, "error: exec_commands: creating pipe failed.\n");
-        cleanup_commands();
+        cleanup_commands(command);
         close_pipes(pipes, pipe_count);
         free(pipes);
         exit(EXIT_FAILURE);

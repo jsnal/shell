@@ -27,7 +27,7 @@ void cleanup_history()
 
 void clean()
 {
-  if (command) cleanup_commands();
+  if (command) cleanup_commands(command);
   if (history) cleanup_history();
 }
 
@@ -174,8 +174,15 @@ struct Command *parse_command(char *line)
     {
       if (strcmp(tokenizedCommand[i], commandOperators[j].token) == 0)
       {
-        if (tokenizedCommand[i + 1] == NULL)
+        // Invalid syntax if the first string is a redirect operator or if there
+        // isn't a file after the operator.
+        if (*tokenizedCommand[i + 1] == '\0' || i == 0)
+        {
           fprintf(stderr, "error: parse_command: invalid redirect syntax\n");
+          cleanup_tokenized_command(tokenizedCommand);
+          cleanup_commands(c);
+          return NULL;
+        }
 
         c->redirects[commandOperators[j].name] = strdup(tokenizedCommand[i + 1]);
         i++;
@@ -207,6 +214,9 @@ int parse_line(char *line)
     return -1;
 
   command = parse_command(commandToken);
+  if (command == NULL)
+    return -1;
+
   next = command;
 
   // Fill out the rest of the LinkedList if it exists
@@ -273,29 +283,17 @@ int shell()
     {
       history_line = strdup(line);
       if (parse_line(line) == -1)
-        fprintf(stderr, "error: problem parsing line\n");
-
-#if DEBUG
-      struct Command *c = command;
-      while (c != NULL)
-      {
-        printf("command: %s: argc: %d\n", c->name, c->argc);
-        c = c->next;
-      }
-#endif
+        goto no_execute;
 
       command_ret = exec_commands(command);
-      cleanup_commands();
+      cleanup_commands(command);
 
+no_execute:
       push_history(history_line);
       free(history_line);
     }
 
     free(line);
-
-#if DEBUG
-    printf("command return: %d\n", command_ret);
-#endif
 
     if (command_ret == -1)
       break;
