@@ -2,7 +2,7 @@
 
 struct Token *tokenize_line(char *line)
 {
-  state = Text;
+  state = s_Text;
   struct Token *tokens = calloc(TOKENS_LIMIT * sizeof(struct Token), 1);
   unsigned int lineLength = strlen(line), dataPosition = 0, tokenPosition = 0;
   char data[128];
@@ -12,62 +12,62 @@ struct Token *tokenize_line(char *line)
   {
     switch (state)
     {
-      case And:
-        COMMIT(And);
+      case s_And:
+        COMMIT(s_And);
         RETURN_START();
-      case Background:
+      case s_Background:
         if (line[i] == '&')
         {
           CONSUME();
-          TO(And);
+          TO(s_And);
         }
 
         if (line[i] == '>')
         {
           CONSUME();
-          TO(RedirectAll);
+          TO(s_RedirectAll);
         }
 
-        COMMIT(Background);
+        COMMIT(s_Background);
         RETURN_START();
-      case Comment:
+      case s_Comment:
         CONSUME();
         if (line[i] == '\0')
         {
-          COMMIT(Comment);
+          COMMIT(s_Comment);
           goto end_of_line;
         }
 
-        TO(Comment);
-      case Empty:
+        TO(s_Comment);
+      case s_Empty:
         if (line[i] == ' ' || line[i] == '\t')
         {
-          TO(Empty);
+          TO(s_Empty);
         }
 
-        COMMIT(Text)
+        COMMIT(s_Text)
         RETURN_START();
-      case Text:
+      case s_Text:
         if (line[i] == ' ' || line[i] == '\t')
         {
-          TO(Empty);
+          TO(s_Empty);
         }
 
-        if (line[i] == '\'') { COMMIT(Text); TO(TextLiteral); }
-        if (line[i] == '#')  { COMMIT_AND_CONSUME(Text); TO(Comment); }
-        if (line[i] == '~')  { COMMIT_AND_CONSUME(Text); TO(Tilde); }
-        if (line[i] == '|')  { COMMIT_AND_CONSUME(Text); TO(Pipe); }
-        if (line[i] == ';')  { COMMIT_AND_CONSUME(Text); TO(Semicolon); }
-        if (line[i] == '&')  { COMMIT_AND_CONSUME(Text); TO(Background); }
-        if (line[i] == '>')  { COMMIT_AND_CONSUME(Text); TO(RedirectOut); }
-        if (line[i] == '<')  { COMMIT_AND_CONSUME(Text); TO(RedirectIn); }
+        if (line[i] == '\'') { COMMIT(s_Text); TO(s_TextLiteral); }
+        if (line[i] == '#')  { COMMIT_AND_CONSUME(s_Text); TO(s_Comment); }
+        if (line[i] == '~')  { COMMIT_AND_CONSUME(s_Text); TO(s_Tilde); }
+        if (line[i] == '|')  { COMMIT_AND_CONSUME(s_Text); TO(s_Pipe); }
+        if (line[i] == ';')  { COMMIT_AND_CONSUME(s_Text); TO(s_Semicolon); }
+        if (line[i] == '&')  { COMMIT_AND_CONSUME(s_Text); TO(s_Background); }
+        if (line[i] == '>')  { COMMIT_AND_CONSUME(s_Text); TO(s_RedirectOut); }
+        if (line[i] == '<')  { COMMIT_AND_CONSUME(s_Text); TO(s_RedirectIn); }
 
         if (line[i] == '2' && line[i + 1] == '>')
         {
-          COMMIT_AND_CONSUME(Text);
+          COMMIT_AND_CONSUME(s_Text);
           i++;
           CONSUME();
-          TO(RedirectError);
+          TO(s_RedirectError);
         }
 
         CONSUME();
@@ -75,74 +75,74 @@ struct Token *tokenize_line(char *line)
         if (line[i] == '\0')
           goto end_of_line;
 
-        TO(Text);
+        TO(s_Text);
 
       // FIXME: If there isn't a closing quote then we never know
-      case TextLiteral:
+      case s_TextLiteral:
         if (line[i] != '\'')
         {
           CONSUME();
-          TO(TextLiteral);
+          TO(s_TextLiteral);
         }
 
-        COMMIT(TextLiteral);
-        TO(Text);
-      case Or:
-        COMMIT(Or);
+        COMMIT(s_TextLiteral);
+        TO(s_Text);
+      case s_Or:
+        COMMIT(s_Or);
         RETURN_START();
-      case Pipe:
+      case s_Pipe:
         if (line[i] == '|')
         {
           CONSUME();
-          TO(Or);
+          TO(s_Or);
         }
 
-        COMMIT(Pipe);
+        COMMIT(s_Pipe);
         RETURN_START();
-      case RedirectAll:
-        COMMIT(RedirectAll);
+      case s_RedirectAll:
+        COMMIT(s_RedirectAll);
         RETURN_START();
-      case RedirectError:
+      case s_RedirectError:
         if (line[i] == '>')
         {
           CONSUME();
-          TO(RedirectErrorAppend);
+          TO(s_RedirectErrorAppend);
         }
 
-        COMMIT(RedirectError);
+        COMMIT(s_RedirectError);
         RETURN_START();
-      case RedirectErrorAppend:
-        COMMIT(RedirectErrorAppend);
+      case s_RedirectErrorAppend:
+        COMMIT(s_RedirectErrorAppend);
         RETURN_START();
-      case RedirectIn:
+      case s_RedirectIn:
         if (line[i] == '<')
         {
           CONSUME();
-          TO(RedirectInAppend);
+          TO(s_RedirectInAppend);
         }
 
-        COMMIT(RedirectIn);
+        COMMIT(s_RedirectIn);
         RETURN_START();
-      case RedirectInAppend:
-        COMMIT(RedirectInAppend);
+      case s_RedirectInAppend:
+        COMMIT(s_RedirectInAppend);
         RETURN_START();
-      case RedirectOut:
+      case s_RedirectOut:
         if (line[i] == '>')
         {
           CONSUME();
-          TO(RedirectOutAppend);
+          TO(s_RedirectOutAppend);
         }
 
-        COMMIT(RedirectOut);
+        COMMIT(s_RedirectOut);
         RETURN_START();
-      case RedirectOutAppend:
-        COMMIT(RedirectOutAppend);
+      case s_RedirectOutAppend:
+        COMMIT(s_RedirectOutAppend);
         RETURN_START();
-      case Semicolon:
-        COMMIT(Semicolon);
+      case s_Semicolon:
+        COMMIT(s_Semicolon);
         RETURN_START();
-      case Tilde:
-        COMMIT(Tilde);
+      case s_Tilde:
+        COMMIT(s_Tilde);
         RETURN_START();
       default:
         fprintf(stderr, "Entered unimplemented state.\n");
@@ -151,7 +151,7 @@ struct Token *tokenize_line(char *line)
   }
 
 end_of_line:
-  COMMIT(Text)
+  COMMIT(s_Text)
 
   return tokens;
 }

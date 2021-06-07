@@ -2,6 +2,7 @@
 #define PARSE_H
 
 #include "command.h"
+#include "tokenize.h"
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>

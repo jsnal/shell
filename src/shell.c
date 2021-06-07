@@ -108,16 +108,8 @@ int shell()
 
     if (!is_empty_line(line))
     {
-      struct Token *tokens = tokenize_line(line);
-      for (unsigned int i = 0; i < 256; i++)
-      {
-        if (tokens[i].data != NULL)
-          printf("%d: %s - %d\n", i, tokens[i].data, tokens[i].type);
-      }
-
-      cleanup_tokens(tokens);
-
-/*       history_line = strdup(line); */
+      parse_line(line);
+      /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */
 /*         goto no_execute; */
 /*  */

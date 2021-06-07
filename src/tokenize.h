@@ -7,6 +7,7 @@
 
 // If there are more than 256 tokens then your command is too long...
 #define TOKENS_LIMIT 256
+#define TOKENS_SIZE 17
 
 #define TO(x)  \
   state = (x); \
@@ -28,26 +29,26 @@
   COMMIT(m_type) \
   CONSUME()
 
-#define RETURN_START() i--; TO(Text)
+#define RETURN_START() i--; TO(s_Text)
 
 enum TokenState {
-  And,
-  Background,
-  Comment,
-  Empty,
-  Or,
-  Pipe,
-  RedirectAll,
-  RedirectError,
-  RedirectErrorAppend,
-  RedirectIn,
-  RedirectInAppend,
-  RedirectOut,
-  RedirectOutAppend,
-  Semicolon,
-  Text,
-  TextLiteral,
-  Tilde,
+  s_And,
+  s_Background,
+  s_Comment,
+  s_Empty,
+  s_Or,
+  s_Pipe,
+  s_RedirectAll,
+  s_RedirectError,
+  s_RedirectErrorAppend,
+  s_RedirectIn,
+  s_RedirectInAppend,
+  s_RedirectOut,
+  s_RedirectOutAppend,
+  s_Semicolon,
+  s_Text,
+  s_TextLiteral,
+  s_Tilde,
 };
 
 struct Token {

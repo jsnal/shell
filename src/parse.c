@@ -1,14 +1,5 @@
 #include "parse.h"
 
-struct CommandOperators commandOperators[] = {
-  { REDIRECT_OUT,          ">" },
-  { REDIRECT_OUT_APPEND,   ">>" },
-  { REDIRECT_IN,           "<" },
-  { REDIRECT_ERROR,        "2>" },
-  { REDIRECT_ERROR_APPEND, "2>>" },
-  { REDIRECT_ALL,          "&>" }
-};
-
 void cleanup_tokenized_command(char** tokenizedCommand)
 {
   for (unsigned int i = 0; *tokenizedCommand[i] != '\0'; i++)
@@ -17,88 +8,18 @@ void cleanup_tokenized_command(char** tokenizedCommand)
   free(tokenizedCommand);
 }
 
-char** tokenize_command(char *line)
+struct Token *slice_tokens(struct Token *tokens, int start, int end)
 {
-  char token[128];
-  unsigned int commandCount = 0, tokenCounter = 0;
-  unsigned int lineLength = strlen(line);
-  char **tokenized = malloc(256 * sizeof(char*));
-  memset(token, 0, 128);
+  int elements = (end - start + 1);
+  int bytes = sizeof(struct Token) * elements;
 
-  for (unsigned int i = 0; i < lineLength; i++)
-  {
-    // Ignore about leading or trailing whitespace
-    if ((i == 0 || i == lineLength) && line[i] == ' ')
-      continue;
+  struct Token *slice = malloc(bytes);
+  memcpy(slice, tokens + start, bytes);
 
-    if (line[i] == ' ')
-    {
-      if (token[0] != 0)
-      {
-        tokenized[commandCount++] = strdup(token);
-        memset(token, 0, 128);
-        tokenCounter = 0;
-      }
-      continue;
-    }
-    else if (line[i] == '2' && line[i + 1] == '>' && line[i + 2] == '>')
-    {
-      if (token[0] != 0)
-      {
-        tokenized[commandCount++] = strdup(token);
-        memset(token, 0, 128);
-        tokenCounter = 0;
-      }
-
-      token[0] = line[i]; token[1] = line[i + 1]; token[2] = line[i + 2]; token[3] = '\0';
-      tokenized[commandCount++] = strdup(token);
-      memset(token, 0, 128);
-      i++;
-      continue;
-    }
-    else if (((line[i] == '2' || line[i] == '&') && line[i + 1] == '>') ||
-        (line[i] == '>' && line[i + 1] == '>'))
-    {
-      if (token[0] != 0)
-      {
-        tokenized[commandCount++] = strdup(token);
-        memset(token, 0, 128);
-        tokenCounter = 0;
-      }
-
-      token[0] = line[i]; token[1] = line[i + 1]; token[2] = '\0';
-      tokenized[commandCount++] = strdup(token);
-      memset(token, 0, 128);
-      i++;
-      continue;
-    }
-    else if (line[i] == '>' || line[i] == '<')
-    {
-      if (token[0] != 0)
-      {
-        tokenized[commandCount++] = strdup(token);
-        memset(token, 0, 128);
-        tokenCounter = 0;
-      }
-
-      token[0] = line[i]; token[1] = '\0';
-      tokenized[commandCount++] = strdup(token);
-      memset(token, 0, 128);
-      continue;
-    }
-
-    token[tokenCounter++] = line[i];
-  }
-
-  if (token[0] != 0)
-    tokenized[commandCount++] = strdup(token);
-
-  tokenized[commandCount] = "\0";
-
-  return tokenized;
+  return slice;
 }
 
-struct Command *parse_command(char *line)
+struct Command *parse_command(struct Token *tokens, enum TokenState type, int size)
 {
   unsigned int commandCount = 0;
   struct Command *c = calloc(sizeof(struct Command), 1);
@@ -110,34 +31,37 @@ struct Command *parse_command(char *line)
     /* FIXME exit_clean(EXIT_FAILURE); */
   }
 
-  char** tokenizedCommand = tokenize_command(line);
-  for (unsigned int i = 0; *tokenizedCommand[i] != '\0'; i++)
+  if (tokens[0].type != s_Text)
   {
-    for (unsigned int j = 0; j < OPERATORS_SIZE; j++)
-    {
-      if (strcmp(tokenizedCommand[i], commandOperators[j].token) == 0)
-      {
-        // Invalid syntax if the first string is a redirect operator or if there
-        // isn't a file after the operator.
-        if (*tokenizedCommand[i + 1] == '\0' || i == 0)
-        {
-          fprintf(stderr, "error: parse_command: invalid redirect syntax\n");
-          cleanup_tokenized_command(tokenizedCommand);
-          cleanup_commands(c);
-          return NULL;
-        }
-
-        c->redirects[commandOperators[j].name] = strdup(tokenizedCommand[i + 1]);
-        i++;
-        goto command_operator_found;
-      }
-    }
-
-    c->argv[commandCount++] = strdup(tokenizedCommand[i]);
-command_operator_found:;
+    fprintf(stderr, "error: parse_line: problems parsing line\n");
+    return NULL;
   }
 
-  cleanup_tokenized_command(tokenizedCommand);
+  for (unsigned int i = 0; i < size; i++)
+  {
+    switch (tokens[i].type)
+    {
+      case s_RedirectAll:
+      case s_RedirectError:
+      case s_RedirectErrorAppend:
+      case s_RedirectIn:
+      case s_RedirectInAppend:
+      case s_RedirectOut:
+      case s_RedirectOutAppend:
+        c->redirects[tokens[i].type] = strdup(tokens[i + 1].data);
+        i++;
+        break;
+      case s_Text:
+      case s_TextLiteral:
+        c->argv[commandCount++] = strdup(tokens[i].data);
+        break;
+      default:
+        fprintf(stderr, "error: parse_line: problems parsing line\n");
+        return NULL;
+    }
+  }
+
+  cleanup_tokens(tokens);
 
   c->name = c->argv[0];
   c->argc = commandCount;
@@ -148,30 +72,57 @@ command_operator_found:;
 
 int parse_line(char *line)
 {
+  struct Token *tokens = tokenize_line(line);
   struct Command *next;
-  char *commandToken, *savePtr;
 
-  // Set the front of the LinkedList
-  commandToken = strtok_r(line, "|", &savePtr);
-  if (!commandToken)
-    return -1;
+  struct Command *test = parse_command(tokens, s_Empty, 4);
 
-  command = parse_command(commandToken);
-  if (command == NULL)
-    return -1;
+  printf("%s\n", test->name);
+  for (unsigned int i = 0; i < test->argc; i++)
+    printf("%s\n", test->argv[i]);
 
-  next = command;
+  for (unsigned int i = 0; i < TOKENS_SIZE; i++)
+    if (test->redirects[i])
+      printf("%s by %d\n", test->redirects[i], i);
 
-  // Fill out the rest of the LinkedList if it exists
-  commandToken = strtok_r(NULL, "|", &savePtr);
-  while(commandToken != NULL)
-  {
-    next->next = parse_command(commandToken);
-    next->next->prev = next;
-    next = next->next;
-    commandToken = strtok_r(NULL, "|", &savePtr);
-  }
+  /* unsigned int start = 0, end = 0, absolute_end = 0; */
+  /* enum TokenState first_opt = s_Empty; */
+  /* for (unsigned int i = 0; i < TOKENS_LIMIT && tokens[i].data != NULL; i++) */
+  /* { */
+  /*   if (tokens[i].type == s_And        || */
+  /*       tokens[i].type == s_Or         || */
+  /*       tokens[i].type == s_Pipe       || */
+  /*       tokens[i].type == s_Semicolon) */
+  /*   { */
+  /*     first_opt = tokens[i].type; */
+  /*     break; */
+  /*   } */
+  /*  */
+  /*   end++; */
+  /* } */
+  /*  */
+  /* // Special case to set the front of the LinkedList */
+  /* command = parse_command(slice_tokens(tokens, start, end - 1), first_opt, end - start); */
+  /* start = end + 1; */
+  /*  */
+  /* for (unsigned int i = end; i < TOKENS_LIMIT && tokens[i].data != NULL; i++) */
+  /* { */
+  /*   if (tokens[i].type == s_And        || */
+  /*       tokens[i].type == s_Or         || */
+  /*       tokens[i].type == s_Pipe       || */
+  /*       tokens[i].type == s_Semicolon) */
+  /*   { */
+  /*     next->next = parse_command(slice_tokens(tokens, start, end - 1), tokens[i].type, end - start); */
+  /*     next->next->prev = next; */
+  /*     next = next->next; */
+  /*     start = end + 1; */
+  /*     end++; */
+  /*   } */
+  /*  */
+  /*   end++; */
+  /*   absolute_end++; */
+  /* } */
 
+  cleanup_tokens(tokens);
   return 0;
 }
-
