@@ -10,6 +10,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-int parse_line(char*);
+// int parse_line(char*);
 
 #endif

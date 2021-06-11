@@ -35,7 +35,7 @@ struct Command {
   char *name;
   char *argv[1024];
   char *redirects[TOKENS_SIZE];
-  enum TokenState listOpt;
+  // enum TokenState listOpt;
   int fds[2];
   struct Command *next;
   struct Command *prev;
