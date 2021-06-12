@@ -18,8 +18,7 @@
 
 #define TO_STRING(type, text) \
   case type: \
-    printf("[%s]\n", text); \
-    break
+    return text; \
 
 enum TokenType {
     TT_UNKNOWN,
@@ -30,7 +29,7 @@ enum TokenType {
     TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON,
     TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, TT_LESSAMP,TT_LESSGREATER,
     TT_LESSLPAREN, TT_GREATER,TT_GREATERGREATER, TT_GREATERPIPE, TT_GREATERAMP,
-    TT_GREATERLPAREN,
+    TT_GREATERLPAREN, TT_ONEGREATER, TT_TWOGREATER, TT_AMPGREATER,
     /* reserved words */
     TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
     TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
@@ -59,12 +58,13 @@ struct TokenState {
 };
 
 struct Token {
+  struct Token *next;
   enum TokenType tokenType;
   char *text;
 };
 
 void next_token(struct TokenState*);
-int tokenize(char*, struct Token**, size_t*);
-void tokenize_to_string(struct Token**, size_t);
-void cleanup_token_list(struct Token**, int);
+struct Token *tokenize(char*);
+void tokens_to_string(struct Token*);
+void cleanup_token_list(struct Token*);
 #endif

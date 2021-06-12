@@ -1,14 +1,18 @@
 #include "tokenize.h"
 
-void cleanup_token_list(struct Token *tokens_list[], int size)
+void cleanup_token_list(struct Token *tokens_list)
 {
-  for (int i = 0; i < size; i++)
-  {
-    if (tokens_list[i]->text)
-      free(tokens_list[i]->text);
+  struct Token *head;
 
-    if (tokens_list[i])
-      free(tokens_list[i]);
+  while (tokens_list)
+  {
+    head = tokens_list;
+    tokens_list = tokens_list->next;
+
+    if (head->text)
+      free(head->text);
+
+    free(head);
   }
 }
 
@@ -85,6 +89,15 @@ enum TokenType tokenize_reserved_words(char *t)
   return ret;
 }
 
+int is_reserved_text(char c)
+{
+  if (c == '(' || c == ')' || c == '{' || c == '}' || c == '!' || c == ';' ||
+      c == '&' || c == '|' || c == '>' || c == '<')
+    return 1;
+
+  return 0;
+}
+
 int tokenize_text(struct TokenState *ts, size_t index)
 {
   if (ts->src.contents[index] == ' ')
@@ -100,22 +113,15 @@ int tokenize_text(struct TokenState *ts, size_t index)
 
   for (size_t i = 0;;i++)
   {
-    if (ts->src.contents[index] == ' ')
+    if (ts->src.contents[index] == ' ' || ts->src.contents[index] == '\0' ||
+        is_reserved_text(ts->src.contents[index]))
       break;
-
-    if (ts->src.contents[index] == '\0')
-    {
-      SET_TYPE(TT_END_OF_INPUT);
-      break;
-    }
 
     ts->text[i] = ts->src.contents[index];
     index++;
   }
 
   SET_TYPE(tokenize_reserved_words(strdup(ts->text)));
-
-  /* SET_TYPE(TT_TEXT); */
   return index;
 }
 
@@ -157,12 +163,18 @@ void next_token(struct TokenState *ts)
       break;
     case '&':
       index++;
-      if (ts->src.contents[index] == '&')
+      switch (ts->src.contents[index])
       {
-        SET_TYPE_INC(TT_AMPAMP);
+        case '&':
+          SET_TYPE_INC(TT_AMPAMP);
+          break;
+        case '>':
+          SET_TYPE_INC(TT_AMPGREATER);
+          break;
+        default:
+          SET_TYPE(TT_AMP);
+          break;
       }
-      else
-        SET_TYPE(TT_AMP);
       break;
     case '|':
       index++;
@@ -224,10 +236,8 @@ void next_token(struct TokenState *ts)
   ts->next_index = index;
 }
 
-int tokenize(char *line, struct Token *tokens_list[], size_t *size)
+struct Token *tokenize(char *line)
 {
-  size_t position = 0;
-
   struct TokenState ts = {
     .error = 0,
     .tokenType = TT_UNKNOWN,
@@ -237,6 +247,8 @@ int tokenize(char *line, struct Token *tokens_list[], size_t *size)
     .index = 0,
     .next_index = 0,
   };
+
+  struct Token *tokens_list = NULL;
 
   while (ts.tokenType != TT_END_OF_INPUT)
   {
@@ -251,67 +263,95 @@ int tokenize(char *line, struct Token *tokens_list[], size_t *size)
     if (ts.tokenType == TT_END_OF_INPUT)
       break;
 
-    tokens_list[position] = malloc(sizeof(struct Token));
-    tokens_list[position]->tokenType = ts.tokenType;
+    // Set the front of the LinkedList
+    if (tokens_list == NULL)
+    {
+      tokens_list = calloc(1, sizeof(struct Token));
+
+      tokens_list->tokenType = ts.tokenType;
+
+      if (ts.tokenType == TT_TEXT && ts.text != NULL)
+        tokens_list->text = strdup(ts.text);
+
+      continue;
+    }
+
+    struct Token *current = tokens_list;
+
+    while (current->next != NULL)
+      current = current->next;
+
+    current->next = calloc(1, sizeof(struct Token));
+    current->next->tokenType = ts.tokenType;
 
     if (ts.tokenType == TT_TEXT && ts.text != NULL)
-      tokens_list[position]->text = strdup(ts.text);
-
-    position++;
+      current->next->text = strdup(ts.text);
   }
 
-  (*size) = position;
-
-  return ts.error;
+  return tokens_list;
 }
 
-void tokenize_to_string(struct Token *tokens_list[], size_t size)
+char *token_stringify(enum TokenType token)
 {
-  printf("Found %ld tokens.\n\n", size);
-
-  for (size_t i = 0; i < size; i++)
+  switch (token)
   {
-    switch (tokens_list[i]->tokenType)
-    {
-      TO_STRING(TT_UNKNOWN, "Unknown");
-      TO_STRING(TT_END_OF_INPUT, "EOF");
-      TO_STRING(TT_TEXT, "Text");
-      TO_STRING(TT_NEW_LINE, "New Line");
-      TO_STRING(TT_AMP, "Amp");
-      TO_STRING(TT_AMPAMP, "AmpAmp");
-      TO_STRING(TT_LPAREN, "Left Paren");
-      TO_STRING(TT_RPAREN, "Right Paren");
-      TO_STRING(TT_SEMICOLON, "Semicolon");
-      TO_STRING(TT_DOUBLE_SEMICOLON, "Double Semicolon");
-      TO_STRING(TT_PIPE, "Pipe");
-      TO_STRING(TT_PIPEPIPE, "PipePipe");
-      TO_STRING(TT_LESS, "Less");
-      TO_STRING(TT_LESSLESS, "LessLess");
-      TO_STRING(TT_LESSAMP, "LessAmp");
-      TO_STRING(TT_LESSGREATER, "LessGreater");
-      TO_STRING(TT_LESSLPAREN, "LessLeft Paren");
-      TO_STRING(TT_GREATER, "Greater");
-      TO_STRING(TT_GREATERGREATER, "GreaterGreater");
-      TO_STRING(TT_GREATERPIPE, "GreaterPipe");
-      TO_STRING(TT_GREATERAMP, "GreaterAmp");
-      TO_STRING(TT_GREATERLPAREN, "GreaterLeft Paren");
-      TO_STRING(TT_IF, "If");
-      TO_STRING(TT_THEN, "Then");
-      TO_STRING(TT_ELSE, "Else");
-      TO_STRING(TT_ELIF, "Elif");
-      TO_STRING(TT_FI, "Fi");
-      TO_STRING(TT_DO, "Do");
-      TO_STRING(TT_DONE, "Done");
-      TO_STRING(TT_CASE, "Case");
-      TO_STRING(TT_ESAC, "Esac");
-      TO_STRING(TT_WHILE, "While");
-      TO_STRING(TT_UNTIL, "Until");
-      TO_STRING(TT_FOR, "For");
-      TO_STRING(TT_LBRACE, "Left Brace");
-      TO_STRING(TT_RBRACE, "Right Brace");
-      TO_STRING(TT_BANG, "Bang");
-      TO_STRING(TT_IN, "In");
-      TO_STRING(TT_FUNCTION, "Function");
-    }
+    TO_STRING(TT_UNKNOWN, "Unknown");
+    TO_STRING(TT_END_OF_INPUT, "EOF");
+    TO_STRING(TT_TEXT, "Text");
+    TO_STRING(TT_NEW_LINE, "New Line");
+    TO_STRING(TT_AMP, "Amp");
+    TO_STRING(TT_AMPAMP, "AmpAmp");
+    TO_STRING(TT_LPAREN, "Left Paren");
+    TO_STRING(TT_RPAREN, "Right Paren");
+    TO_STRING(TT_SEMICOLON, "Semicolon");
+    TO_STRING(TT_DOUBLE_SEMICOLON, "Double Semicolon");
+    TO_STRING(TT_PIPE, "Pipe");
+    TO_STRING(TT_PIPEPIPE, "PipePipe");
+    TO_STRING(TT_LESS, "Less");
+    TO_STRING(TT_LESSLESS, "LessLess");
+    TO_STRING(TT_LESSAMP, "LessAmp");
+    TO_STRING(TT_LESSGREATER, "LessGreater");
+    TO_STRING(TT_LESSLPAREN, "LessLeft Paren");
+    TO_STRING(TT_GREATER, "Greater");
+    TO_STRING(TT_GREATERGREATER, "GreaterGreater");
+    TO_STRING(TT_GREATERPIPE, "GreaterPipe");
+    TO_STRING(TT_GREATERAMP, "GreaterAmp");
+    TO_STRING(TT_GREATERLPAREN, "GreaterLeft Paren");
+    TO_STRING(TT_ONEGREATER, "One Greater");
+    TO_STRING(TT_TWOGREATER, "Two Greater");
+    TO_STRING(TT_AMPGREATER, "AmpGreater");
+    TO_STRING(TT_IF, "If");
+    TO_STRING(TT_THEN, "Then");
+    TO_STRING(TT_ELSE, "Else");
+    TO_STRING(TT_ELIF, "Elif");
+    TO_STRING(TT_FI, "Fi");
+    TO_STRING(TT_DO, "Do");
+    TO_STRING(TT_DONE, "Done");
+    TO_STRING(TT_CASE, "Case");
+    TO_STRING(TT_ESAC, "Esac");
+    TO_STRING(TT_WHILE, "While");
+    TO_STRING(TT_UNTIL, "Until");
+    TO_STRING(TT_FOR, "For");
+    TO_STRING(TT_LBRACE, "Left Brace");
+    TO_STRING(TT_RBRACE, "Right Brace");
+    TO_STRING(TT_BANG, "Bang");
+    TO_STRING(TT_IN, "In");
+    TO_STRING(TT_FUNCTION, "Function");
+  }
+  return "Symbol not found";
+}
+
+void tokens_to_string(struct Token *tokens_list)
+{
+  struct Token *current = tokens_list;
+
+  while (current != NULL)
+  {
+    if (current->text)
+      printf("[%s] - '%s'\n", token_stringify(current->tokenType), current->text);
+    else
+      printf("[%s]\n", token_stringify(current->tokenType));
+
+    current = current->next;
   }
 }

@@ -108,20 +108,9 @@ int shell()
 
     if (!is_empty_line(line))
     {
-      struct Token *tokens_list[TOKENS_SIZE];// = calloc(1, sizeof(struct Token));
-      for (size_t i = 0; i < TOKENS_SIZE; i++)
-        tokens_list[i] = NULL;
-
-
-      size_t size;
-
-      tokenize(line, tokens_list, &size);
-      for (size_t i = 0; i < size; i++)
-        if (tokens_list[i]->text)
-          printf("%s\n", tokens_list[i]->text);
-
-      tokenize_to_string(tokens_list, size);
-      cleanup_token_list(tokens_list, size);
+      struct Token *tokens_list = tokenize(line);
+      tokens_to_string(tokens_list);
+      cleanup_token_list(tokens_list);
 
       /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */
