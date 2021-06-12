@@ -92,7 +92,7 @@ enum TokenType tokenize_reserved_words(char *t)
 int is_reserved_text(char c)
 {
   if (c == '(' || c == ')' || c == '{' || c == '}' || c == '!' || c == ';' ||
-      c == '&' || c == '|' || c == '>' || c == '<')
+      c == '&' || c == '|' || c == '>' || c == '<' || c == '#')
     return 1;
 
   return 0;
@@ -100,6 +100,8 @@ int is_reserved_text(char c)
 
 int tokenize_text(struct TokenState *ts, size_t index)
 {
+  int single_quote = 0;
+
   if (ts->src.contents[index] == ' ')
     return ++index;
 
@@ -109,7 +111,7 @@ int tokenize_text(struct TokenState *ts, size_t index)
     return 0;
   }
 
-  memset(ts->text, '\0', TOKENS_SIZE);
+  memset(ts->text, '\0', TEXT_MAX);
 
   for (size_t i = 0;;i++)
   {
@@ -121,7 +123,11 @@ int tokenize_text(struct TokenState *ts, size_t index)
     index++;
   }
 
-  SET_TYPE(tokenize_reserved_words(strdup(ts->text)));
+  if (single_quote)
+    SET_TYPE(TT_TEXT);
+  else
+    SET_TYPE(tokenize_reserved_words(strdup(ts->text)));
+
   return index;
 }
 
@@ -131,6 +137,7 @@ void next_token(struct TokenState *ts)
 
   switch (ts->src.contents[index])
   {
+    case '#':
     case '\0':
       SET_TYPE(TT_END_OF_INPUT);
       break;
@@ -227,6 +234,22 @@ void next_token(struct TokenState *ts)
           break;
       }
       break;
+    case '1':
+      index++;
+      if (ts->src.contents[index] == '>')
+      {
+        SET_TYPE_INC(TT_ONEGREATER);
+        break;
+      }
+      index--;
+    case '2':
+      index++;
+      if (ts->src.contents[index] == '>')
+      {
+        SET_TYPE_INC(TT_TWOGREATER);
+        break;
+      }
+      index--;
     default:
       index = tokenize_text(ts, index);
       break;

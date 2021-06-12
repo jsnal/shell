@@ -6,7 +6,7 @@
 #include <string.h>
 
 // If there are more than 256 tokens then your command is too long...
-#define TOKENS_LIMIT 256
+#define TEXT_MAX 256
 #define TOKENS_SIZE 17
 
 #define SET_TYPE(type) \
@@ -24,13 +24,13 @@ enum TokenType {
     TT_UNKNOWN,
     TT_END_OF_INPUT,
     TT_TEXT,
-    /* operators */
+    /* Operators */
     TT_NEW_LINE,
     TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON,
     TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, TT_LESSAMP,TT_LESSGREATER,
     TT_LESSLPAREN, TT_GREATER,TT_GREATERGREATER, TT_GREATERPIPE, TT_GREATERAMP,
     TT_GREATERLPAREN, TT_ONEGREATER, TT_TWOGREATER, TT_AMPGREATER,
-    /* reserved words */
+    /* Reserved Words */
     TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
     TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
     TT_FUNCTION,
@@ -51,7 +51,7 @@ struct SourceBuffer {
 struct TokenState {
   int error;
   enum TokenType tokenType;
-  char text[TOKENS_LIMIT];
+  char text[TEXT_MAX];
   struct SourceBuffer src;
   size_t index;
   size_t next_index;
