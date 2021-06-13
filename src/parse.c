@@ -1,128 +1,133 @@
 #include "parse.h"
 
-/* void cleanup_tokenized_command(char** tokenizedCommand) */
-/* { */
-/*   for (unsigned int i = 0; *tokenizedCommand[i] != '\0'; i++) */
-/*     free(tokenizedCommand[i]); */
-/*  */
-/*   free(tokenizedCommand); */
-/* } */
-/*  */
-/* struct Token *slice_tokens(struct Token *tokens, int start, int end) */
-/* { */
-/*   int elements = (end - start + 1); */
-/*   int bytes = sizeof(struct Token) * elements; */
-/*  */
-/*   struct Token *slice = malloc(bytes); */
-/*   memcpy(slice, tokens + start, bytes); */
-/*  */
-/*   return slice; */
-/* } */
-/*  */
-/* struct Command *parse_command(struct Token *tokens, enum TokenState type, int size) */
-/* { */
-/*   unsigned int commandCount = 0; */
-/*   struct Command *c = calloc(sizeof(struct Command), 1); */
-/*  */
-/*   if (c == NULL) */
-/*   { */
-/*     fprintf(stderr, "error: parse_command: calloc failed\n"); */
-/*     exit(EXIT_FAILURE); */
-/*     #<{(| FIXME exit_clean(EXIT_FAILURE); |)}># */
-/*   } */
-/*  */
-/*   if (tokens[0].type != s_Text) */
-/*   { */
-/*     fprintf(stderr, "error: parse_line: problems parsing line\n"); */
-/*     return NULL; */
-/*   } */
-/*  */
-/*   for (unsigned int i = 0; i < size; i++) */
-/*   { */
-/*     switch (tokens[i].type) */
-/*     { */
-/*       case s_RedirectAll: */
-/*       case s_RedirectError: */
-/*       case s_RedirectErrorAppend: */
-/*       case s_RedirectIn: */
-/*       case s_RedirectInAppend: */
-/*       case s_RedirectOut: */
-/*       case s_RedirectOutAppend: */
-/*         c->redirects[tokens[i].type] = strdup(tokens[i + 1].data); */
-/*         i++; */
-/*         break; */
-/*       case s_Text: */
-/*       case s_TextLiteral: */
-/*         c->argv[commandCount++] = strdup(tokens[i].data); */
-/*         break; */
-/*       default: */
-/*         fprintf(stderr, "error: parse_line: problems parsing line\n"); */
-/*         return NULL; */
-/*     } */
-/*   } */
-/*  */
-/*   cleanup_tokens(tokens); */
-/*  */
-/*   c->name = c->argv[0]; */
-/*   c->argc = commandCount; */
-/*   c->next = NULL; */
-/*   c->prev = NULL; */
-/*   return c; */
-/* } */
-/*  */
-/* int parse_line(char *line) */
-/* { */
-/*   struct Token *tokens = tokenize_line(line); */
-/*   struct Command *next; */
-/*  */
-/*   struct Command *test = parse_command(tokens, s_Empty, 4); */
-/*  */
-/*   printf("%s\n", test->name); */
-/*   for (unsigned int i = 0; i < test->argc; i++) */
-/*     printf("%s\n", test->argv[i]); */
-/*  */
-/*   for (unsigned int i = 0; i < TOKENS_SIZE; i++) */
-/*     if (test->redirects[i]) */
-/*       printf("%s by %d\n", test->redirects[i], i); */
-/*  */
-/*   #<{(| unsigned int start = 0, end = 0, absolute_end = 0; |)}># */
-/*   #<{(| enum TokenState first_opt = s_Empty; |)}># */
-/*   #<{(| for (unsigned int i = 0; i < TOKENS_LIMIT && tokens[i].data != NULL; i++) |)}># */
-/*   #<{(| { |)}># */
-/*   #<{(|   if (tokens[i].type == s_And        || |)}># */
-/*   #<{(|       tokens[i].type == s_Or         || |)}># */
-/*   #<{(|       tokens[i].type == s_Pipe       || |)}># */
-/*   #<{(|       tokens[i].type == s_Semicolon) |)}># */
-/*   #<{(|   { |)}># */
-/*   #<{(|     first_opt = tokens[i].type; |)}># */
-/*   #<{(|     break; |)}># */
-/*   #<{(|   } |)}># */
-/*   #<{(|  |)}># */
-/*   #<{(|   end++; |)}># */
-/*   #<{(| } |)}># */
-/*   #<{(|  |)}># */
-/*   #<{(| // Special case to set the front of the LinkedList |)}># */
-/*   #<{(| command = parse_command(slice_tokens(tokens, start, end - 1), first_opt, end - start); |)}># */
-/*   #<{(| start = end + 1; |)}># */
-/*   #<{(|  |)}># */
-/*   #<{(| for (unsigned int i = end; i < TOKENS_LIMIT && tokens[i].data != NULL; i++) |)}># */
-/*   #<{(| { |)}># */
-/*   #<{(|   if (tokens[i].type == s_And        || |)}># */
-/*   #<{(|       tokens[i].type == s_Or         || |)}># */
-/*   #<{(|       tokens[i].type == s_Pipe       || |)}># */
-/*   #<{(|       tokens[i].type == s_Semicolon) |)}># */
-/*   #<{(|   { |)}># */
-/*   #<{(|     next->next = parse_command(slice_tokens(tokens, start, end - 1), tokens[i].type, end - start); |)}># */
-/*   #<{(|     next->next->prev = next; |)}># */
-/*   #<{(|     next = next->next; |)}># */
-/*   #<{(|     start = end + 1; |)}># */
-/*   #<{(|     end++; |)}># */
-/*   #<{(|   } |)}># */
-/*   #<{(|  |)}># */
-/*   #<{(|   end++; |)}># */
-/*   #<{(|   absolute_end++; |)}># */
-/*   #<{(| } |)}># */
-/*  */
-/*   cleanup_tokens(tokens); */
-/*   return 0; */
-/* } */
+void cleanup_tokenized_command()
+{
+}
+
+struct AndOr *parse_command_list(struct Token *tokens_list)
+{
+}
+
+struct AndOr *parse_andor(struct Token *tokens_list)
+{}
+
+struct Pipeline *parse_pipeline(struct Token *tokens_list)
+{}
+
+struct Cmd *parse_simple_command(struct Token *tokens_list)
+{
+  struct Token *current = tokens_list, *last = NULL;
+
+  while (current != NULL)
+  {
+    printf("%s\n", current->text);
+    last = current;
+    current = current->next;
+  }
+
+  /* printf("the last token was %s\n", last->text); */
+}
+
+struct Node *parse_to_node(enum NodeType node_type, struct Token *tokens_list)
+{
+  printf("parsing %d\n", node_type);
+  struct Node *node = calloc(1, sizeof(struct Node));
+  node->node_type = node_type;
+
+  switch (node_type)
+  {
+    case NT_ANDOR:
+      node->andor = parse_andor(tokens_list);
+      break;
+    case NT_CASE:
+      TODO;
+    case NT_FUNCTION:
+      TODO;
+    case NT_IF:
+      TODO;
+    case NT_PIPELINE:
+      node->pipeline = parse_pipeline(tokens_list);
+      break;
+    case NT_SIMPLE_COMMAND:
+      node->command = parse_simple_command(tokens_list);
+      break;
+    case NT_WHILE:
+      TODO;
+    default:
+      fprintf(stderr, "error: parse_to_node: unknown node type\n");
+      free(node);
+      return NULL;
+  }
+
+  return node;
+}
+
+int scan_tokens_for_andor(struct Token *tokens_list)
+{
+  struct Token *current = tokens_list;
+
+  while (current != NULL)
+  {
+    if (current->tokenType == TT_AMPAMP || current->tokenType == TT_PIPEPIPE)
+      return 1;
+
+    current = current->next;
+  }
+
+  return 0;
+}
+
+int scan_tokens_for_pipeline(struct Token *tokens_list)
+{
+  struct Token *current = tokens_list;
+
+  while (current != NULL)
+  {
+    if (current->tokenType == TT_PIPE)
+      return 1;
+
+    current = current->next;
+  }
+
+  return 0;
+}
+
+enum NodeType scan_tokens_for_node_type(struct Token *tokens_list)
+{
+  switch (tokens_list->tokenType)
+  {
+    case TT_IF:
+      return NT_IF;
+    case TT_WHILE:
+      return NT_WHILE;
+    case TT_CASE:
+      return NT_CASE;
+    case TT_FUNCTION:
+      return NT_FUNCTION;
+    case TT_TEXT:
+      if (scan_tokens_for_andor(tokens_list))
+        return NT_ANDOR;
+
+      if (scan_tokens_for_pipeline(tokens_list))
+        return NT_PIPELINE;
+
+      return NT_SIMPLE_COMMAND;
+    default:
+      fprintf(stderr, "error: illegal symbol\n");
+      return NT_ERROR;
+  }
+}
+
+int parse(struct Token *tokens_list)
+{
+  struct Tree tree = {
+    .nodes = NULL,
+  };
+
+  enum NodeType current_type;
+  if ((current_type = scan_tokens_for_node_type(tokens_list)) == NT_ERROR)
+    return 1;
+
+  /* tree.nodes = */
+  parse_to_node(current_type, tokens_list);
+}

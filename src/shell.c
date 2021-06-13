@@ -110,6 +110,8 @@ int shell()
     {
       struct Token *tokens_list = tokenize(line);
       tokens_to_string(tokens_list);
+
+      parse(tokens_list);
       cleanup_token_list(tokens_list);
 
       /* history_line = strdup(line); */
