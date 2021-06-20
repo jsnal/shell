@@ -36,13 +36,18 @@ struct Redirect {
   char *file;
 };
 
+enum TerminatorType {
+  MT_BACKGROUND,
+  MT_NONE,
+  MT_SEQUENCE,
+};
+
 // TODO: rename this after I delete the old one
 struct Cmd {
   struct Cmd *next;
   size_t argc;
   char *argv[ARG_MAX];
-  int sequence;
-  int background;
+  enum TerminatorType terminator_type;
   struct Redirect *redirects;
 };
 
@@ -68,6 +73,7 @@ enum NodeType {
 };
 
 struct Node {
+  struct Node *next;
   enum NodeType node_type;
   union {
     struct Cmd *command;

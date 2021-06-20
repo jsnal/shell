@@ -111,8 +111,6 @@ int tokenize_text(struct TokenState *ts, size_t index)
     return 0;
   }
 
-  memset(ts->text, '\0', TEXT_MAX);
-
   for (size_t i = 0;;i++)
   {
     if (ts->src.contents[index] == ' ' || ts->src.contents[index] == '\0' ||
@@ -286,6 +284,7 @@ struct Token *tokenize(char *line)
     if (ts.tokenType == TT_END_OF_INPUT)
       break;
 
+    // TODO: make this better???
     // Set the front of the LinkedList
     if (tokens_list == NULL)
     {
@@ -294,8 +293,11 @@ struct Token *tokenize(char *line)
       tokens_list->tokenType = ts.tokenType;
       tokens_list->prev = NULL;
 
-      if (ts.tokenType == TT_TEXT && ts.text != NULL)
+      if (ts.text[0] != '\0')
+      {
         tokens_list->text = strdup(ts.text);
+        memset(ts.text, '\0', TEXT_MAX);
+      }
 
       continue;
     }
@@ -310,8 +312,11 @@ struct Token *tokenize(char *line)
     current->next->prev = current;
     current->next->tokenType = ts.tokenType;
 
-    if (ts.tokenType == TT_TEXT && ts.text != NULL)
+    if (ts.text[0] != '\0')
+    {
       current->next->text = strdup(ts.text);
+      memset(ts.text, '\0', TEXT_MAX);
+    }
   }
 
   return tokens_list;

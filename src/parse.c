@@ -1,19 +1,32 @@
 #include "parse.h"
 
-void consume_token(struct ParseState **ps, struct Token *token)
+struct Token *consume_token(struct ParseState **ps, struct Token *token)
 {
-  struct Token *current = (*ps)->tokens_list;
+  if ((*ps)->tokens_list == NULL)
+    return NULL;
 
+  struct Token *current = (*ps)->tokens_list;
+  size_t list_size;
+
+  for (list_size = 0; current != NULL; list_size++)
+    current = current->next;
+
+  if (list_size == 1)
+  {
+    (*ps)->tokens_list = NULL;
+    return current;
+  }
+
+  current = (*ps)->tokens_list;
   while (current != NULL && current->id != token->id)
     current = current->next;
 
   // Front of list
   if (current->prev == NULL)
   {
-    (*ps)->tokens_list = current->next;
+    (*ps)->tokens_list = (*ps)->tokens_list->next;
     (*ps)->tokens_list->prev = NULL;
-    free(current);
-    return;
+    return current;
   }
 
   // Back of list
@@ -21,12 +34,12 @@ void consume_token(struct ParseState **ps, struct Token *token)
   {
     (*current).prev->next = NULL;
     free(current);
-    return;
+    return current;
   }
 
   (*current).prev->next = current->next;
   (*current).next->prev = current->prev;
-  free(current);
+  return current;
 }
 
 void cleanup_tokenized_command()
@@ -93,7 +106,7 @@ struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
   return NULL;
 
 found_redirect:
-  if (current->next == NULL || current->next->tokenType != TT_TEXT)
+  if (current->next == NULL || current->next->text == NULL)
   {
     fprintf(stderr, "error: no redirection file\n");
     // TODO: fail without exiting whole shell
@@ -110,36 +123,45 @@ found_redirect:
 struct Cmd *parse_simple_command(struct ParseState *ps)
 {
   struct Redirect *redirects = scan_tokens_for_redirect(ps), *next_redirect;
-  while ((next_redirect = scan_tokens_for_redirect(ps)) != NULL)
+  while (redirects != NULL && (next_redirect = scan_tokens_for_redirect(ps)) != NULL)
     redirects->next = next_redirect;
 
   struct Token *current = ps->tokens_list;
   struct Cmd *cmd = calloc(1, sizeof(struct Cmd));
   size_t argc = 0;
 
+  cmd->redirects = redirects;
+  cmd->terminator_type = MT_NONE;
+
   while (current != NULL)
   {
     switch (current->tokenType)
     {
-      case TT_TEXT:
+      case TT_IF:    case TT_THEN: case TT_ELSE: case TT_ELIF: case TT_FI:
+      case TT_DO:    case TT_DONE: case TT_CASE: case TT_ESAC: case TT_WHILE:
+      case TT_UNTIL: case TT_FOR:  case TT_IN:   case TT_FUNCTION: case TT_TEXT:
         cmd->argv[argc++] = current->text;
+        struct Token *consumed_token = consume_token(&ps, current);
+        current = current->next;
+        free(consumed_token);
         break;
       case TT_AMP:
-        cmd->background = 1;
-        break;
+        consume_token(&ps, current);
+        cmd->terminator_type = MT_BACKGROUND;
+        cmd->argc = argc;
+        return cmd;
       case TT_SEMICOLON:
-        cmd->sequence = 1;
-        break;
+        consume_token(&ps, current);
+        cmd->terminator_type = MT_SEQUENCE;
+        cmd->argc = argc;
+        return cmd;
       default:
+        current = current->next;
         break;
     }
-
-    current = current->next;
   }
 
   cmd->argc = argc;
-  cmd->redirects = redirects;
-
   return cmd;
 }
 
@@ -236,18 +258,44 @@ enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 struct Tree *parse(struct Token *tokens_list)
 {
   struct Tree *tree = calloc(1, sizeof(struct Tree));
+  struct Node *head_node = NULL, *current = NULL;
   struct ParseState ps = {
     .tokens_list = tokens_list,
     .node_type = NT_ERROR,
     .index = 0,
   };
 
-  if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
-    return NULL;
 
-  tree->nodes = parse_to_node(&ps);
+  while (ps.tokens_list != NULL)
+  {
+    if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
+      return NULL;
 
+    if (head_node == NULL)
+      head_node = current = parse_to_node(&ps);
+    else
+    {
+      current->next = parse_to_node(&ps);
+      current = current->next;
+    }
+  }
+
+  tree->nodes = head_node;
   return tree;
+}
+
+char *terminator_to_string(enum TerminatorType tt)
+{
+  switch (tt)
+  {
+    case MT_BACKGROUND:
+      return "background";
+    case MT_NONE:
+      return "(NULL)";
+    case MT_SEQUENCE:
+      return "sequence";
+  }
+  return "unknown value";
 }
 
 void command_to_string(struct Cmd *cmd)
@@ -258,7 +306,7 @@ void command_to_string(struct Cmd *cmd)
   printf("\n");
 
   if (cmd->redirects == NULL)
-    printf("   redirects: (NULL)\n");
+    printf("   redirects: (NULL)");
   else
     printf("   redirects: ");
 
@@ -269,6 +317,7 @@ void command_to_string(struct Cmd *cmd)
     r = r->next;
   }
   printf("\n");
+  printf("   terminator: %s\n", terminator_to_string(cmd->terminator_type));
 }
 
 void tree_to_string(struct Tree *tree)
@@ -287,14 +336,20 @@ void tree_to_string(struct Tree *tree)
   }
   printf(" Nodes\n");
 
-  if (tree->nodes->node_type == NT_SIMPLE_COMMAND)
+  struct Node *current = tree->nodes;
+  while (current != NULL)
   {
-    if (tree->nodes->command == NULL)
+    if (current->node_type == NT_SIMPLE_COMMAND)
     {
-      printf("  (NULL)\n");
-      return;
+      if (current->command == NULL)
+      {
+        printf("  (NULL)\n");
+        return;
+      }
+      printf("  Simple Command\n");
+      command_to_string(current->command);
     }
-    printf("  Simple Command\n");
-    command_to_string(tree->nodes->command);
+
+    current = current->next;
   }
 }
