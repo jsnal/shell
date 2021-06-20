@@ -60,6 +60,7 @@ struct TokenState {
 };
 
 struct Token {
+  int id;
   struct Token *next, *prev;
   enum TokenType tokenType;
   char *text;

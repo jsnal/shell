@@ -114,7 +114,7 @@ int shell()
       struct Tree *tree = parse(tokens_list);
       tree_to_string(tree);
 
-      cleanup_token_list(tokens_list);
+      /* cleanup_token_list(tokens_list); */
 
       /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */

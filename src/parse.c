@@ -1,5 +1,34 @@
 #include "parse.h"
 
+void consume_token(struct ParseState **ps, struct Token *token)
+{
+  struct Token *current = (*ps)->tokens_list;
+
+  while (current != NULL && current->id != token->id)
+    current = current->next;
+
+  // Front of list
+  if (current->prev == NULL)
+  {
+    (*ps)->tokens_list = current->next;
+    (*ps)->tokens_list->prev = NULL;
+    free(current);
+    return;
+  }
+
+  // Back of list
+  if (current->next == NULL)
+  {
+    (*current).prev->next = NULL;
+    free(current);
+    return;
+  }
+
+  (*current).prev->next = current->next;
+  (*current).next->prev = current->prev;
+  free(current);
+}
+
 void cleanup_tokenized_command()
 {
 }
@@ -8,15 +37,15 @@ struct AndOr *parse_command_list(struct Token *tokens_list)
 {
 }
 
-struct AndOr *parse_andor(struct Token *tokens_list)
+struct AndOr *parse_andor(struct ParseState *ps)
 {}
 
-struct Pipeline *parse_pipeline(struct Token *tokens_list)
+struct Pipeline *parse_pipeline(struct ParseState *ps)
 {}
 
-struct Redirect *scan_tokens_for_redirect(struct Token **index)
+struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 {
-  struct Token *current = (*index);
+  struct Token *current = ps->tokens_list;
   struct Redirect *redirect = calloc(1, sizeof(struct Redirect));
 
   while (current != NULL)
@@ -72,31 +101,19 @@ found_redirect:
   }
 
   redirect->file = current->next->text;
-
-  if (current->next->next == NULL)
-    *index = NULL;
-  else
-    *index = (*current).next->next;
+  consume_token(&ps, current->next);
+  consume_token(&ps, current);
 
   return redirect;
 }
 
-struct Cmd *parse_simple_command(struct Token *tokens_list)
+struct Cmd *parse_simple_command(struct ParseState *ps)
 {
-  struct Token *current = tokens_list;
-  struct Token *redirect_token_index = tokens_list;
+  struct Redirect *redirects = scan_tokens_for_redirect(ps), *next_redirect;
+  while ((next_redirect = scan_tokens_for_redirect(ps)) != NULL)
+    redirects->next = next_redirect;
 
-  struct Redirect *redirects = scan_tokens_for_redirect(&redirect_token_index);
-  while (redirect_token_index != NULL && redirects != NULL)
-    redirects->next = scan_tokens_for_redirect(&redirect_token_index);
-
-  struct Redirect *tmp = redirects;
-  while (tmp != NULL)
-  {
-    printf("%d - %s\n", tmp->type, tmp->file);
-    tmp = tmp->next;
-  }
-
+  struct Token *current = ps->tokens_list;
   struct Cmd *cmd = calloc(1, sizeof(struct Cmd));
   size_t argc = 0;
 
@@ -126,15 +143,15 @@ struct Cmd *parse_simple_command(struct Token *tokens_list)
   return cmd;
 }
 
-struct Node *parse_to_node(enum NodeType node_type, struct Token *tokens_list)
+struct Node *parse_to_node(struct ParseState *ps)
 {
   struct Node *node = calloc(1, sizeof(struct Node));
-  node->node_type = node_type;
+  node->node_type = ps->node_type;
 
-  switch (node_type)
+  switch (ps->node_type)
   {
     case NT_ANDOR:
-      node->andor = parse_andor(tokens_list);
+      node->andor = parse_andor(ps);
       break;
     case NT_CASE:
       TODO;
@@ -143,10 +160,11 @@ struct Node *parse_to_node(enum NodeType node_type, struct Token *tokens_list)
     case NT_IF:
       TODO;
     case NT_PIPELINE:
-      node->pipeline = parse_pipeline(tokens_list);
+      node->pipeline = parse_pipeline(ps);
       break;
     case NT_SIMPLE_COMMAND:
-      node->command = parse_simple_command(tokens_list);
+      if ((node->command = parse_simple_command(ps)) == NULL)
+        return NULL;
       break;
     case NT_WHILE:
       TODO;
@@ -159,9 +177,9 @@ struct Node *parse_to_node(enum NodeType node_type, struct Token *tokens_list)
   return node;
 }
 
-int scan_tokens_for_andor(struct Token *tokens_list)
+int scan_tokens_for_andor(struct ParseState *ps)
 {
-  struct Token *current = tokens_list;
+  struct Token *current = ps->tokens_list;
 
   while (current != NULL)
   {
@@ -174,9 +192,9 @@ int scan_tokens_for_andor(struct Token *tokens_list)
   return 0;
 }
 
-int scan_tokens_for_pipeline(struct Token *tokens_list)
+int scan_tokens_for_pipeline(struct ParseState *ps)
 {
-  struct Token *current = tokens_list;
+  struct Token *current = ps->tokens_list;
 
   while (current != NULL)
   {
@@ -189,9 +207,9 @@ int scan_tokens_for_pipeline(struct Token *tokens_list)
   return 0;
 }
 
-enum NodeType scan_tokens_for_node_type(struct Token *tokens_list)
+enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 {
-  switch (tokens_list->tokenType)
+  switch (ps->tokens_list->tokenType)
   {
     case TT_IF:
       return NT_IF;
@@ -202,10 +220,10 @@ enum NodeType scan_tokens_for_node_type(struct Token *tokens_list)
     case TT_FUNCTION:
       return NT_FUNCTION;
     case TT_TEXT:
-      if (scan_tokens_for_andor(tokens_list))
+      if (scan_tokens_for_andor(ps))
         return NT_ANDOR;
 
-      if (scan_tokens_for_pipeline(tokens_list))
+      if (scan_tokens_for_pipeline(ps))
         return NT_PIPELINE;
 
       return NT_SIMPLE_COMMAND;
@@ -218,21 +236,38 @@ enum NodeType scan_tokens_for_node_type(struct Token *tokens_list)
 struct Tree *parse(struct Token *tokens_list)
 {
   struct Tree *tree = calloc(1, sizeof(struct Tree));
+  struct ParseState ps = {
+    .tokens_list = tokens_list,
+    .node_type = NT_ERROR,
+    .index = 0,
+  };
 
-  enum NodeType current_type;
-  if ((current_type = scan_tokens_for_node_type(tokens_list)) == NT_ERROR)
+  if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
     return NULL;
 
-  tree->nodes = parse_to_node(current_type, tokens_list);
+  tree->nodes = parse_to_node(&ps);
 
   return tree;
 }
 
 void command_to_string(struct Cmd *cmd)
 {
-  printf("   argc: %ld\n   ", cmd->argc);
+  printf("   argc: %ld\n   argv: ", cmd->argc);
   for (size_t i = 0; i < cmd->argc; i++)
     printf("[%s]", cmd->argv[i]);
+  printf("\n");
+
+  if (cmd->redirects == NULL)
+    printf("   redirects: (NULL)\n");
+  else
+    printf("   redirects: ");
+
+  struct Redirect *r = cmd->redirects;
+  while (r != NULL)
+  {
+    printf("[%d:%s]", r->type, r->file);
+    r = r->next;
+  }
   printf("\n");
 }
 

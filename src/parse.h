@@ -80,6 +80,12 @@ struct Tree {
   struct Node *nodes;
 };
 
+struct ParseState {
+  struct Token *tokens_list;
+  enum NodeType node_type;
+  size_t index;
+};
+
 struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
 #endif

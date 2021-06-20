@@ -290,6 +290,7 @@ struct Token *tokenize(char *line)
     if (tokens_list == NULL)
     {
       tokens_list = calloc(1, sizeof(struct Token));
+      tokens_list->id = 0;
       tokens_list->tokenType = ts.tokenType;
       tokens_list->prev = NULL;
 
@@ -305,6 +306,7 @@ struct Token *tokenize(char *line)
       current = current->next;
 
     current->next = calloc(1, sizeof(struct Token));
+    current->next->id = current->id + 1;
     current->next->prev = current;
     current->next->tokenType = ts.tokenType;
 
@@ -372,9 +374,10 @@ void tokens_to_string(struct Token *tokens_list)
   while (current != NULL)
   {
     if (current->text)
-      printf("[%s] - '%s'\n", token_stringify(current->tokenType), current->text);
+      printf("[%s:%d] - '%s'\n", token_stringify(current->tokenType),
+          current->id, current->text);
     else
-      printf("[%s]\n", token_stringify(current->tokenType));
+      printf("[%s:%d]\n", token_stringify(current->tokenType), current->id);
 
     current = current->next;
   }
