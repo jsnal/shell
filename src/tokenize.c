@@ -291,6 +291,7 @@ struct Token *tokenize(char *line)
     {
       tokens_list = calloc(1, sizeof(struct Token));
       tokens_list->tokenType = ts.tokenType;
+      tokens_list->prev = NULL;
 
       if (ts.tokenType == TT_TEXT && ts.text != NULL)
         tokens_list->text = strdup(ts.text);
@@ -304,6 +305,7 @@ struct Token *tokenize(char *line)
       current = current->next;
 
     current->next = calloc(1, sizeof(struct Token));
+    current->next->prev = current;
     current->next->tokenType = ts.tokenType;
 
     if (ts.tokenType == TT_TEXT && ts.text != NULL)

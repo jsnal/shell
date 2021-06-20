@@ -24,12 +24,14 @@ enum TokenType {
     TT_UNKNOWN,
     TT_END_OF_INPUT,
     TT_TEXT,
+
     /* Operators */
     TT_NEW_LINE,
     TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON,
     TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, TT_LESSAMP,TT_LESSGREATER,
     TT_LESSLPAREN, TT_GREATER,TT_GREATERGREATER, TT_GREATERPIPE, TT_GREATERAMP,
     TT_GREATERLPAREN, TT_ONEGREATER, TT_TWOGREATER, TT_AMPGREATER,
+
     /* Reserved Words */
     TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
     TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
@@ -58,7 +60,7 @@ struct TokenState {
 };
 
 struct Token {
-  struct Token *next;
+  struct Token *next, *prev;
   enum TokenType tokenType;
   char *text;
 };
