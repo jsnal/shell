@@ -290,7 +290,6 @@ struct Token *tokenize(char *line)
     if (tokens_list == NULL)
     {
       tokens_list = calloc(1, sizeof(struct Token));
-
       tokens_list->tokenType = ts.tokenType;
 
       if (ts.tokenType == TT_TEXT && ts.text != NULL)

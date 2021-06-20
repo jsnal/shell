@@ -80,6 +80,6 @@ struct Tree {
   struct Node *nodes;
 };
 
-int parse(struct Token*);
-
+struct Tree *parse(struct Token*);
+void tree_to_string(struct Tree*);
 #endif

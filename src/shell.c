@@ -111,7 +111,9 @@ int shell()
       struct Token *tokens_list = tokenize(line);
       tokens_to_string(tokens_list);
 
-      parse(tokens_list);
+      struct Tree *tree = parse(tokens_list);
+      tree_to_string(tree);
+
       cleanup_token_list(tokens_list);
 
       /* history_line = strdup(line); */
