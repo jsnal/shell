@@ -14,7 +14,7 @@ struct Token *consume_token(struct ParseState **ps, struct Token *token)
   if (list_size == 1)
   {
     (*ps)->tokens_list = NULL;
-    return current;
+    return token;
   }
 
   current = (*ps)->tokens_list;
@@ -33,17 +33,12 @@ struct Token *consume_token(struct ParseState **ps, struct Token *token)
   if (current->next == NULL)
   {
     (*current).prev->next = NULL;
-    free(current);
     return current;
   }
 
   (*current).prev->next = current->next;
   (*current).next->prev = current->prev;
   return current;
-}
-
-void cleanup_tokenized_command()
-{
 }
 
 struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
@@ -125,7 +120,6 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
 
   while (current != NULL)
   {
-    printf("%s\n", current->text);
     switch (current->token_type)
     {
       case TT_IF:    case TT_THEN: case TT_ELSE: case TT_ELIF: case TT_FI:
@@ -161,7 +155,56 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
 struct Pipeline *parse_pipeline(struct ParseState *ps)
 {
-  return NULL;
+  struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
+  struct Pipeline *pipeline = calloc(1, sizeof(struct Pipeline));
+
+  /* LinkedList iterators */
+  struct Token *current_token = ps->tokens_list;
+  struct Token *current_subtoken = NULL;
+  struct Cmd *current_command = NULL;
+
+  while (current_token != NULL)
+  {
+    if (current_token->token_type == TT_PIPE)
+    {
+      struct Token *consumed_token = consume_token(&ps, current_token);
+      current_token = current_token->next;
+      free(consumed_token);
+
+      if (current_command == NULL)
+        pipeline->commands = current_command = parse_simple_command(pipeline_ps);
+      else {
+        current_command->next = parse_simple_command(pipeline_ps);
+        current_command = current_command->next;
+      }
+      pipeline_ps->tokens_list = NULL;
+      continue;
+    }
+
+    struct Token *consumed_token = consume_token(&ps, current_token);
+    current_token = current_token->next;
+    consumed_token->prev = NULL;
+    consumed_token->next = NULL;
+
+    if (pipeline_ps->tokens_list == NULL)
+      pipeline_ps->tokens_list = current_subtoken = consumed_token;
+    else {
+      current_subtoken->next = consumed_token;
+      current_subtoken = current_subtoken->next;
+    }
+  }
+
+  // TODO: better error
+  if (pipeline_ps->tokens_list == NULL)
+  {
+    fprintf(stderr, "error: parse_pipeline: nothing found after pipe\n");
+    return NULL;
+  }
+
+  current_command->next = parse_simple_command(pipeline_ps);
+  free(pipeline_ps);
+
+  return pipeline;
 }
 
 struct Node *parse_to_node(struct ParseState *ps)
@@ -249,7 +292,7 @@ enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 
       return NT_SIMPLE_COMMAND;
     default:
-      fprintf(stderr, "error: illegal symbol\n");
+      fprintf(stderr, "error: scan_tokens_for_node_type: illegal symbol\n");
       return NT_ERROR;
   }
 }
@@ -265,8 +308,8 @@ struct Tree *parse(struct Token *tokens_list)
   };
 
 
-  /* while (ps.tokens_list != NULL) */
-  /* { */
+  while (ps.tokens_list != NULL)
+  {
     if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
       return NULL;
 
@@ -277,7 +320,7 @@ struct Tree *parse(struct Token *tokens_list)
       current->next = parse_to_node(&ps);
       current = current->next;
     }
-  /* } */
+  }
 
   tree->nodes = head_node;
   return tree;
@@ -319,6 +362,17 @@ void command_to_string(struct Cmd *cmd)
   printf("   terminator: %s\n", terminator_to_string(cmd->terminator_type));
 }
 
+void pipeline_to_string(struct Pipeline *pipeline)
+{
+  struct Cmd *current = pipeline->commands;
+  while (current != NULL)
+  {
+    printf("   Command\n");
+    command_to_string(current);
+    current = current->next;
+  }
+}
+
 void tree_to_string(struct Tree *tree)
 {
   if (tree == NULL)
@@ -347,6 +401,16 @@ void tree_to_string(struct Tree *tree)
       }
       printf("  Simple Command\n");
       command_to_string(current->command);
+    }
+    else if (current->node_type == NT_PIPELINE)
+    {
+      if (current->command == NULL)
+      {
+        printf("  (NULL)\n");
+        return;
+      }
+      printf("  Pipeline\n");
+      pipeline_to_string(current->pipeline);
     }
 
     current = current->next;

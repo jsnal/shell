@@ -14,6 +14,7 @@ void cleanup_token_list(struct Token *tokens_list)
 
     free(head);
   }
+  tokens_list = NULL;
 }
 
 enum TokenType tokenize_reserved_words(char *t)
