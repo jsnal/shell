@@ -1,7 +1,7 @@
 CC = gcc
 
 NAME = shell
-CFLAGS = -Wall -O2 -Werror=format-security -ggdb3
+CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon
 
 # For debug printing only!
 # CFLAGS += -DDEBUG

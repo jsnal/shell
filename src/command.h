@@ -4,13 +4,13 @@
 #include "tokenize.h"
 #include <stdlib.h>
 
-//TODO:REMOVE
-#define OPERATORS_SIZE 7
-
 char *SYS_PATH;
 char *SYS_HOME;
 char *PWD;
 char *OLDPWD;
+
+//TODO:REMOVE
+#define OPERATORS_SIZE 7
 
 enum RedirectOperators {
   REDIRECT_ALL,

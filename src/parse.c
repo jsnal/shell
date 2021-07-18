@@ -161,46 +161,6 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
 struct Pipeline *parse_pipeline(struct ParseState *ps)
 {
-  struct Token *current = ps->tokens_list, *pipeline_current = NULL;
-  struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
-  int index = 0, index_next = 0;
-
-  while (current != NULL)
-  {
-    if (current->token_type == TT_PIPE)
-    {
-      consume_token(&ps, current);
-
-      struct Token *sliced_list = slice_list(index, index_next);
-      index = index_next;
-
-      struct Cmd *a = parse_simple_command(pipeline_ps);
-      command_to_string(a);
-      pipeline_ps->tokens_list = NULL;
-
-      struct Token *delete_current = ps->tokens_list;
-      for (size_t i = 0; delete_current != NULL && i < commands_in_pipeline; i++)
-      {
-        consume_token(&ps, delete_current);
-        delete_current = delete_current->next;
-      }
-    }
-
-    current = current->next;
-    index_next++;
-    /* if (pipeline_ps->tokens_list == NULL) */
-    /* { */
-    /*   pipeline_ps->tokens_list = pipeline_current = current; */
-    /*   commands_in_pipeline++; */
-    /* } */
-    /* else */
-    /* { */
-    /*   pipeline_current->next = current; */
-    /*   pipeline_current = pipeline_current->next; */
-    /*   commands_in_pipeline++; */
-    /* } */
-  }
-  printf("parse pipeline\n");
   return NULL;
 }
 
