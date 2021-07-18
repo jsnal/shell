@@ -10,7 +10,7 @@
 #define TOKENS_SIZE 17
 
 #define SET_TYPE(type) \
-  ts->tokenType = (type)
+  ts->token_type = (type)
 
 #define SET_TYPE_INC(type) \
   SET_TYPE(type); \
@@ -52,7 +52,7 @@ struct SourceBuffer {
 
 struct TokenState {
   int error;
-  enum TokenType tokenType;
+  enum TokenType token_type;
   char text[TEXT_MAX];
   struct SourceBuffer src;
   size_t index;
@@ -62,7 +62,7 @@ struct TokenState {
 struct Token {
   int id;
   struct Token *next, *prev;
-  enum TokenType tokenType;
+  enum TokenType token_type;
   char *text;
 };
 

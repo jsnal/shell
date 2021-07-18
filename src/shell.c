@@ -109,7 +109,7 @@ int shell()
     if (!is_empty_line(line))
     {
       struct Token *tokens_list = tokenize(line);
-      tokens_to_string(tokens_list);
+      /* tokens_to_string(tokens_list); */
 
       struct Tree *tree = parse(tokens_list);
       tree_to_string(tree);

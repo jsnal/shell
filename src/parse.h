@@ -52,7 +52,7 @@ struct Cmd {
 };
 
 struct Pipeline {
-  struct Pipeline *next;
+  size_t length;
   struct Cmd *commands;
 };
 
@@ -94,4 +94,6 @@ struct ParseState {
 
 struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
+char *terminator_to_string(enum TerminatorType);
+void command_to_string(struct Cmd*);
 #endif

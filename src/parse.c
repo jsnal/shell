@@ -46,16 +46,6 @@ void cleanup_tokenized_command()
 {
 }
 
-struct AndOr *parse_command_list(struct Token *tokens_list)
-{
-}
-
-struct AndOr *parse_andor(struct ParseState *ps)
-{}
-
-struct Pipeline *parse_pipeline(struct ParseState *ps)
-{}
-
 struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 {
   struct Token *current = ps->tokens_list;
@@ -63,7 +53,7 @@ struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 
   while (current != NULL)
   {
-    switch (current->tokenType)
+    switch (current->token_type)
     {
       case TT_LESS:
         redirect->type = RT_INPUT;
@@ -135,7 +125,8 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
 
   while (current != NULL)
   {
-    switch (current->tokenType)
+    printf("%s\n", current->text);
+    switch (current->token_type)
     {
       case TT_IF:    case TT_THEN: case TT_ELSE: case TT_ELIF: case TT_FI:
       case TT_DO:    case TT_DONE: case TT_CASE: case TT_ESAC: case TT_WHILE:
@@ -163,6 +154,54 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
 
   cmd->argc = argc;
   return cmd;
+}
+
+struct AndOr *parse_andor(struct ParseState *ps)
+{}
+
+struct Pipeline *parse_pipeline(struct ParseState *ps)
+{
+  struct Token *current = ps->tokens_list, *pipeline_current = NULL;
+  struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
+  int index = 0, index_next = 0;
+
+  while (current != NULL)
+  {
+    if (current->token_type == TT_PIPE)
+    {
+      consume_token(&ps, current);
+
+      struct Token *sliced_list = slice_list(index, index_next);
+      index = index_next;
+
+      struct Cmd *a = parse_simple_command(pipeline_ps);
+      command_to_string(a);
+      pipeline_ps->tokens_list = NULL;
+
+      struct Token *delete_current = ps->tokens_list;
+      for (size_t i = 0; delete_current != NULL && i < commands_in_pipeline; i++)
+      {
+        consume_token(&ps, delete_current);
+        delete_current = delete_current->next;
+      }
+    }
+
+    current = current->next;
+    index_next++;
+    /* if (pipeline_ps->tokens_list == NULL) */
+    /* { */
+    /*   pipeline_ps->tokens_list = pipeline_current = current; */
+    /*   commands_in_pipeline++; */
+    /* } */
+    /* else */
+    /* { */
+    /*   pipeline_current->next = current; */
+    /*   pipeline_current = pipeline_current->next; */
+    /*   commands_in_pipeline++; */
+    /* } */
+  }
+  printf("parse pipeline\n");
+  return NULL;
 }
 
 struct Node *parse_to_node(struct ParseState *ps)
@@ -205,7 +244,7 @@ int scan_tokens_for_andor(struct ParseState *ps)
 
   while (current != NULL)
   {
-    if (current->tokenType == TT_AMPAMP || current->tokenType == TT_PIPEPIPE)
+    if (current->token_type == TT_AMPAMP || current->token_type == TT_PIPEPIPE)
       return 1;
 
     current = current->next;
@@ -220,7 +259,7 @@ int scan_tokens_for_pipeline(struct ParseState *ps)
 
   while (current != NULL)
   {
-    if (current->tokenType == TT_PIPE)
+    if (current->token_type == TT_PIPE)
       return 1;
 
     current = current->next;
@@ -231,7 +270,7 @@ int scan_tokens_for_pipeline(struct ParseState *ps)
 
 enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 {
-  switch (ps->tokens_list->tokenType)
+  switch (ps->tokens_list->token_type)
   {
     case TT_IF:
       return NT_IF;
@@ -266,8 +305,8 @@ struct Tree *parse(struct Token *tokens_list)
   };
 
 
-  while (ps.tokens_list != NULL)
-  {
+  /* while (ps.tokens_list != NULL) */
+  /* { */
     if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
       return NULL;
 
@@ -278,7 +317,7 @@ struct Tree *parse(struct Token *tokens_list)
       current->next = parse_to_node(&ps);
       current = current->next;
     }
-  }
+  /* } */
 
   tree->nodes = head_node;
   return tree;
