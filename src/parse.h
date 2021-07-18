@@ -42,6 +42,12 @@ enum TerminatorType {
   MT_SEQUENCE,
 };
 
+enum AndOrType {
+  AOT_AND,
+  AOT_OR,
+  AOT_NONE,
+};
+
 // TODO: rename this after I delete the old one
 struct Cmd {
   struct Cmd *next;
@@ -52,8 +58,9 @@ struct Cmd {
 };
 
 struct Pipeline {
-  size_t length;
+  struct Pipeline *next;
   struct Cmd *commands;
+  enum AndOrType andor_type;
 };
 
 struct AndOr {
@@ -96,4 +103,6 @@ struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
 char *terminator_to_string(enum TerminatorType);
 void command_to_string(struct Cmd*);
+void pipeline_to_string(struct Pipeline*);
+void andor_to_string(struct AndOr*);
 #endif

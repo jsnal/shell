@@ -90,7 +90,7 @@ char *read_line(void)
   return ret_line;
 }
 
-int shell()
+int shell(int print_ast, int print_tokens)
 {
   unsigned int command_ret = 0;
   char *history_line;
@@ -109,10 +109,12 @@ int shell()
     if (!is_empty_line(line))
     {
       struct Token *tokens_list = tokenize(line);
-      /* tokens_to_string(tokens_list); */
+      if (print_tokens)
+        tokens_to_string(tokens_list);
 
       struct Tree *tree = parse(tokens_list);
-      tree_to_string(tree);
+      if (print_ast)
+        tree_to_string(tree);
 
       /* cleanup_token_list(tokens_list); */
 

@@ -150,17 +150,13 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
   return cmd;
 }
 
-struct AndOr *parse_andor(struct ParseState *ps)
-{}
-
 struct Pipeline *parse_pipeline(struct ParseState *ps)
 {
   struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
   struct Pipeline *pipeline = calloc(1, sizeof(struct Pipeline));
 
   /* LinkedList iterators */
-  struct Token *current_token = ps->tokens_list;
-  struct Token *current_subtoken = NULL;
+  struct Token *current_token = ps->tokens_list, *current_subtoken = NULL;
   struct Cmd *current_command = NULL;
 
   while (current_token != NULL)
@@ -177,7 +173,9 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
         current_command->next = parse_simple_command(pipeline_ps);
         current_command = current_command->next;
       }
+
       pipeline_ps->tokens_list = NULL;
+      current_subtoken = NULL;
       continue;
     }
 
@@ -186,10 +184,11 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
     consumed_token->prev = NULL;
     consumed_token->next = NULL;
 
-    if (pipeline_ps->tokens_list == NULL)
+    if (current_subtoken == NULL)
       pipeline_ps->tokens_list = current_subtoken = consumed_token;
     else {
       current_subtoken->next = consumed_token;
+      consumed_token->prev = current_subtoken;
       current_subtoken = current_subtoken->next;
     }
   }
@@ -201,10 +200,69 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
     return NULL;
   }
 
-  current_command->next = parse_simple_command(pipeline_ps);
+  if (current_command == NULL)
+    pipeline->commands = parse_simple_command(pipeline_ps);
+  else
+    current_command->next = parse_simple_command(pipeline_ps);
+
   free(pipeline_ps);
 
+  pipeline->andor_type = AOT_NONE;
   return pipeline;
+}
+
+struct AndOr *parse_andor(struct ParseState *ps)
+{
+  struct ParseState *andor_ps = calloc(1, sizeof(struct ParseState));
+  struct AndOr *andor = calloc(1, sizeof(struct AndOr));
+  struct Token *current_token = ps->tokens_list, *current_subtoken = NULL;
+  struct Pipeline *current_pipeline = NULL;
+
+  while (current_token != NULL)
+  {
+    if (current_token->token_type == TT_AMPAMP || current_token->token_type == TT_PIPEPIPE)
+    {
+      struct Token *consumed_token = consume_token(&ps, current_token);
+      current_token = current_token->next;
+
+      if (current_pipeline == NULL)
+        andor->pipelines = current_pipeline = parse_pipeline(andor_ps);
+      else {
+        current_pipeline->next = parse_pipeline(andor_ps);
+        current_pipeline = current_pipeline->next;
+      }
+
+      if (consumed_token->token_type == TT_AMPAMP)
+        current_pipeline->andor_type = AOT_AND;
+      else
+        current_pipeline->andor_type = AOT_OR;
+
+      free(consumed_token);
+      continue;
+    }
+
+    struct Token *consumed_token = consume_token(&ps, current_token);
+    current_token = current_token->next;
+    consumed_token->prev = NULL;
+    consumed_token->next = NULL;
+
+    if (andor_ps->tokens_list == NULL)
+      andor_ps->tokens_list = current_subtoken = consumed_token;
+    else {
+      current_subtoken->next = consumed_token;
+      current_subtoken = current_subtoken->next;
+    }
+  }
+
+  if (andor_ps->tokens_list == NULL)
+  {
+    fprintf(stderr, "error: parse_andor: nothing found after and/or\n");
+    return NULL;
+  }
+
+  current_pipeline->next = parse_pipeline(andor_ps);
+  free(andor_ps);
+  return andor;
 }
 
 struct Node *parse_to_node(struct ParseState *ps)
@@ -224,7 +282,8 @@ struct Node *parse_to_node(struct ParseState *ps)
     case NT_IF:
       TODO;
     case NT_PIPELINE:
-      node->pipeline = parse_pipeline(ps);
+      if ((node->pipeline = parse_pipeline(ps)) == NULL)
+        return NULL;
       break;
     case NT_SIMPLE_COMMAND:
       if ((node->command = parse_simple_command(ps)) == NULL)
@@ -340,6 +399,20 @@ char *terminator_to_string(enum TerminatorType tt)
   return "unknown value";
 }
 
+char *andor_type_to_string(enum AndOrType aot)
+{
+  switch (aot)
+  {
+    case AOT_AND:
+      return "and";
+    case AOT_OR:
+      return "or";
+    case AOT_NONE:
+      return "(NULL)";
+  }
+  return "unknown value";
+}
+
 void command_to_string(struct Cmd *cmd)
 {
   printf("   argc: %ld\n   argv: ", cmd->argc);
@@ -365,10 +438,23 @@ void command_to_string(struct Cmd *cmd)
 void pipeline_to_string(struct Pipeline *pipeline)
 {
   struct Cmd *current = pipeline->commands;
+  printf("   and/or: %s\n", andor_type_to_string(pipeline->andor_type));
   while (current != NULL)
   {
     printf("   Command\n");
     command_to_string(current);
+    current = current->next;
+  }
+}
+
+void andor_to_string(struct AndOr *andor)
+{
+  struct Pipeline *current = andor->pipelines;
+
+  while (current != NULL)
+  {
+    printf("   Pipeline\n");
+    pipeline_to_string(current);
     current = current->next;
   }
 }
@@ -411,6 +497,16 @@ void tree_to_string(struct Tree *tree)
       }
       printf("  Pipeline\n");
       pipeline_to_string(current->pipeline);
+    }
+    else if (current->node_type == NT_ANDOR)
+    {
+      if (current->command == NULL)
+      {
+        printf("  (NULL)\n");
+        return;
+      }
+      printf("  AndOr\n");
+      andor_to_string(current->andor);
     }
 
     current = current->next;
