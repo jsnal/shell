@@ -102,7 +102,7 @@ struct ParseState {
 struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
 char *terminator_to_string(enum TerminatorType);
-void command_to_string(struct Cmd*);
-void pipeline_to_string(struct Pipeline*);
+void command_to_string(struct Cmd*, int space);
+void pipeline_to_string(struct Pipeline*, int space);
 void andor_to_string(struct AndOr*);
 #endif

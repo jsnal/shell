@@ -385,6 +385,8 @@ struct Tree *parse(struct Token *tokens_list)
   return tree;
 }
 
+/* To String Functions */
+
 char *terminator_to_string(enum TerminatorType tt)
 {
   switch (tt)
@@ -413,17 +415,20 @@ char *andor_type_to_string(enum AndOrType aot)
   return "unknown value";
 }
 
-void command_to_string(struct Cmd *cmd)
+void command_to_string(struct Cmd *cmd, int space)
 {
-  printf("   argc: %ld\n   argv: ", cmd->argc);
+  printf("%*sSimple Command\n", space, "");
+  printf("%*sargc: %ld\n", space + 1, "", cmd->argc);
+  printf("%*sargv: ", space + 1, "");
+
   for (size_t i = 0; i < cmd->argc; i++)
     printf("[%s]", cmd->argv[i]);
   printf("\n");
 
+  printf("%*sredirects: ", space + 1, "");
+
   if (cmd->redirects == NULL)
-    printf("   redirects: (NULL)");
-  else
-    printf("   redirects: ");
+    printf("(NULL)");
 
   struct Redirect *r = cmd->redirects;
   while (r != NULL)
@@ -432,17 +437,18 @@ void command_to_string(struct Cmd *cmd)
     r = r->next;
   }
   printf("\n");
-  printf("   terminator: %s\n", terminator_to_string(cmd->terminator_type));
+  printf("%*sterminator: %s\n", space + 1, "", terminator_to_string(cmd->terminator_type));
 }
 
-void pipeline_to_string(struct Pipeline *pipeline)
+void pipeline_to_string(struct Pipeline *pipeline, int space)
 {
   struct Cmd *current = pipeline->commands;
-  printf("   and/or: %s\n", andor_type_to_string(pipeline->andor_type));
+  printf("%*sPipeline\n", space, "");
+  printf("%*sand/or: %s\n", space + 1, "", andor_type_to_string(pipeline->andor_type));
+
   while (current != NULL)
   {
-    printf("   Command\n");
-    command_to_string(current);
+    command_to_string(current, space + 1);
     current = current->next;
   }
 }
@@ -450,11 +456,12 @@ void pipeline_to_string(struct Pipeline *pipeline)
 void andor_to_string(struct AndOr *andor)
 {
   struct Pipeline *current = andor->pipelines;
+  printf("  AndOr\n");
 
   while (current != NULL)
   {
     printf("   Pipeline\n");
-    pipeline_to_string(current);
+    pipeline_to_string(current, 3);
     current = current->next;
   }
 }
@@ -478,37 +485,27 @@ void tree_to_string(struct Tree *tree)
   struct Node *current = tree->nodes;
   while (current != NULL)
   {
-    if (current->node_type == NT_SIMPLE_COMMAND)
+    if (current->command == NULL)
     {
-      if (current->command == NULL)
-      {
-        printf("  (NULL)\n");
-        return;
-      }
-      printf("  Simple Command\n");
-      command_to_string(current->command);
-    }
-    else if (current->node_type == NT_PIPELINE)
-    {
-      if (current->command == NULL)
-      {
-        printf("  (NULL)\n");
-        return;
-      }
-      printf("  Pipeline\n");
-      pipeline_to_string(current->pipeline);
-    }
-    else if (current->node_type == NT_ANDOR)
-    {
-      if (current->command == NULL)
-      {
-        printf("  (NULL)\n");
-        return;
-      }
-      printf("  AndOr\n");
-      andor_to_string(current->andor);
+      printf("  (NULL)\n");
+      return;
     }
 
+    switch (current->node_type)
+    {
+      case NT_SIMPLE_COMMAND:
+        command_to_string(current->command, 2);
+        break;
+      case NT_PIPELINE:
+        pipeline_to_string(current->pipeline, 2);
+        break;
+      case NT_ANDOR:
+        andor_to_string(current->andor);
+        break;
+      default:
+        printf("  Node not supported\n");
+        return;
+    }
     current = current->next;
   }
 }
