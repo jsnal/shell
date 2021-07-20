@@ -158,3 +158,98 @@ int execute_commands(struct Command *cmd)
 
   return exec_ret;
 }
+
+int execute_andor(struct AndOr *andor)
+{
+  printf("andor\n");
+}
+
+int execute_pipeline(struct Pipeline *pipeline)
+{
+  printf("pipeline\n");
+}
+
+int execute_simple_command(struct Cmd *command)
+{
+  pid_t command_pid = fork();
+
+  if (command_pid == -1)
+  {
+    fprintf(stderr, "error: execute_command: fork error\n");
+    return -1;
+  }
+
+  if (command_pid == 0)
+  {
+    struct Redirect *current = command->redirects;
+    while (current != NULL)
+    {
+      switch (current->type)
+      {
+        case RT_INPUT:
+          handle_redirect_in(current->file);
+          break;
+        case RT_OUTPUT:
+          handle_redirect_out(current->file, 0);
+          break;
+        case RT_ERROR:
+          handle_redirect_error(current->file, 0);
+          break;
+        case RT_ALL:
+          handle_redirect_all(current->file);
+          break;
+        case RT_APPEND:
+          handle_redirect_out(current->file, 1);
+          break;
+        default:
+          break;
+      }
+      current = current->next;
+    }
+
+    execvp(command->argv[0], command->argv);
+
+    switch(errno)
+    {
+      case ENOENT:
+        fprintf(stderr, "error: exec_command: command not found: %s\n", command->argv[0]);
+        break;
+      case EACCES:
+        fprintf(stderr, "error: exec_command: permission denied: %s\n", command->argv[0]);
+        break;
+      default:
+        fprintf(stderr, "error: exec_command: %s\n", strerror(errno));
+        break;
+    }
+
+    _exit(EXIT_FAILURE);
+  }
+
+  return command_pid;
+}
+
+int execute(struct Tree *tree)
+{
+  struct Node *current = tree->nodes;
+
+  while (current != NULL)
+  {
+    switch (current->node_type)
+    {
+      case NT_ANDOR:
+        execute_andor(current->andor);
+        break;
+      case NT_PIPELINE:
+        execute_pipeline(current->pipeline);
+        break;
+      case NT_SIMPLE_COMMAND:
+        execute_simple_command(current->command);
+        wait(NULL);
+        break;
+      default:
+        printf("Node not implemented!\n");
+        return 1;
+    }
+    current = current->next;
+  }
+}
