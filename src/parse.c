@@ -48,7 +48,7 @@ struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 
   while (current != NULL)
   {
-    switch (current->token_type)
+    switch (current->type)
     {
       case TT_LESS:
         redirect->type = RT_INPUT;
@@ -116,11 +116,11 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
   size_t argc = 0;
 
   cmd->redirects = redirects;
-  cmd->terminator_type = MT_NONE;
+  cmd->terminator = MT_NONE;
 
   while (current != NULL)
   {
-    switch (current->token_type)
+    switch (current->type)
     {
       case TT_IF:    case TT_THEN: case TT_ELSE: case TT_ELIF: case TT_FI:
       case TT_DO:    case TT_DONE: case TT_CASE: case TT_ESAC: case TT_WHILE:
@@ -132,12 +132,12 @@ struct Cmd *parse_simple_command(struct ParseState *ps)
         break;
       case TT_AMP:
         consume_token(&ps, current);
-        cmd->terminator_type = MT_BACKGROUND;
+        cmd->terminator = MT_BACKGROUND;
         cmd->argc = argc;
         return cmd;
       case TT_SEMICOLON:
         consume_token(&ps, current);
-        cmd->terminator_type = MT_SEQUENCE;
+        cmd->terminator = MT_SEQUENCE;
         cmd->argc = argc;
         return cmd;
       default:
@@ -161,7 +161,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
 
   while (current_token != NULL)
   {
-    if (current_token->token_type == TT_PIPE)
+    if (current_token->type == TT_PIPE)
     {
       struct Token *consumed_token = consume_token(&ps, current_token);
       current_token = current_token->next;
@@ -207,7 +207,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
 
   free(pipeline_ps);
 
-  pipeline->andor_type = AOT_NONE;
+  pipeline->type = AOT_NONE;
   return pipeline;
 }
 
@@ -220,7 +220,7 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
   while (current_token != NULL)
   {
-    if (current_token->token_type == TT_AMPAMP || current_token->token_type == TT_PIPEPIPE)
+    if (current_token->type == TT_AMPAMP || current_token->type == TT_PIPEPIPE)
     {
       struct Token *consumed_token = consume_token(&ps, current_token);
       current_token = current_token->next;
@@ -232,10 +232,10 @@ struct AndOr *parse_andor(struct ParseState *ps)
         current_pipeline = current_pipeline->next;
       }
 
-      if (consumed_token->token_type == TT_AMPAMP)
-        current_pipeline->andor_type = AOT_AND;
+      if (consumed_token->type == TT_AMPAMP)
+        current_pipeline->type = AOT_AND;
       else
-        current_pipeline->andor_type = AOT_OR;
+        current_pipeline->type = AOT_OR;
 
       free(consumed_token);
       continue;
@@ -268,9 +268,9 @@ struct AndOr *parse_andor(struct ParseState *ps)
 struct Node *parse_to_node(struct ParseState *ps)
 {
   struct Node *node = calloc(1, sizeof(struct Node));
-  node->node_type = ps->node_type;
+  node->type = ps->type;
 
-  switch (ps->node_type)
+  switch (ps->type)
   {
     case NT_ANDOR:
       node->andor = parse_andor(ps);
@@ -306,7 +306,7 @@ int scan_tokens_for_andor(struct ParseState *ps)
 
   while (current != NULL)
   {
-    if (current->token_type == TT_AMPAMP || current->token_type == TT_PIPEPIPE)
+    if (current->type == TT_AMPAMP || current->type == TT_PIPEPIPE)
       return 1;
 
     current = current->next;
@@ -321,7 +321,7 @@ int scan_tokens_for_pipeline(struct ParseState *ps)
 
   while (current != NULL)
   {
-    if (current->token_type == TT_PIPE)
+    if (current->type == TT_PIPE)
       return 1;
 
     current = current->next;
@@ -332,7 +332,7 @@ int scan_tokens_for_pipeline(struct ParseState *ps)
 
 enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 {
-  switch (ps->tokens_list->token_type)
+  switch (ps->tokens_list->type)
   {
     case TT_IF:
       return NT_IF;
@@ -362,14 +362,14 @@ struct Tree *parse(struct Token *tokens_list)
   struct Node *head_node = NULL, *current = NULL;
   struct ParseState ps = {
     .tokens_list = tokens_list,
-    .node_type = NT_ERROR,
+    .type = NT_ERROR,
     .index = 0,
   };
 
 
   while (ps.tokens_list != NULL)
   {
-    if ((ps.node_type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
+    if ((ps.type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
       return NULL;
 
     if (head_node == NULL)
@@ -437,14 +437,14 @@ void command_to_string(struct Cmd *cmd, int space)
     r = r->next;
   }
   printf("\n");
-  printf("%*sterminator: %s\n", space + 1, "", terminator_to_string(cmd->terminator_type));
+  printf("%*sterminator: %s\n", space + 1, "", terminator_to_string(cmd->terminator));
 }
 
 void pipeline_to_string(struct Pipeline *pipeline, int space)
 {
   struct Cmd *current = pipeline->commands;
   printf("%*sPipeline\n", space, "");
-  printf("%*sand/or: %s\n", space + 1, "", andor_type_to_string(pipeline->andor_type));
+  printf("%*sand/or: %s\n", space + 1, "", andor_type_to_string(pipeline->type));
 
   while (current != NULL)
   {
@@ -491,7 +491,7 @@ void tree_to_string(struct Tree *tree)
       return;
     }
 
-    switch (current->node_type)
+    switch (current->type)
     {
       case NT_SIMPLE_COMMAND:
         command_to_string(current->command, 2);

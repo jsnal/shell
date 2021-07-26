@@ -53,14 +53,14 @@ struct Cmd {
   struct Cmd *next;
   size_t argc;
   char *argv[ARG_MAX];
-  enum TerminatorType terminator_type;
+  enum TerminatorType terminator;
   struct Redirect *redirects;
 };
 
 struct Pipeline {
   struct Pipeline *next;
   struct Cmd *commands;
-  enum AndOrType andor_type;
+  enum AndOrType type;
 };
 
 struct AndOr {
@@ -81,7 +81,7 @@ enum NodeType {
 
 struct Node {
   struct Node *next;
-  enum NodeType node_type;
+  enum NodeType type;
   union {
     struct Cmd *command;
     struct Pipeline *pipeline;
@@ -95,7 +95,7 @@ struct Tree {
 
 struct ParseState {
   struct Token *tokens_list;
-  enum NodeType node_type;
+  enum NodeType type;
   size_t index;
 };
 

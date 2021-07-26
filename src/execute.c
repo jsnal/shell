@@ -166,7 +166,13 @@ int execute_andor(struct AndOr *andor)
 
 int execute_pipeline(struct Pipeline *pipeline)
 {
-  printf("pipeline\n");
+  struct Cmd *current = pipeline->commands;
+
+  while (current != NULL)
+  {
+    printf("%s\n", current->argv[0]);
+    current = current->next;
+  }
 }
 
 int execute_simple_command(struct Cmd *command)
@@ -234,7 +240,7 @@ int execute(struct Tree *tree)
 
   while (current != NULL)
   {
-    switch (current->node_type)
+    switch (current->type)
     {
       case NT_ANDOR:
         execute_andor(current->andor);

@@ -262,7 +262,7 @@ struct Token *tokenize(char *line)
 {
   struct TokenState ts = {
     .error = 0,
-    .token_type = TT_UNKNOWN,
+    .type = TT_UNKNOWN,
     .text = { '\0' },
     .src.contents = line,
     .src.length = strlen(line),
@@ -272,7 +272,7 @@ struct Token *tokenize(char *line)
 
   struct Token *tokens_list = NULL;
 
-  while (ts.token_type != TT_END_OF_INPUT)
+  while (ts.type != TT_END_OF_INPUT)
   {
     if (ts.src.contents[ts.next_index] == ' ')
     {
@@ -282,7 +282,7 @@ struct Token *tokenize(char *line)
 
     next_token(&ts);
 
-    if (ts.token_type == TT_END_OF_INPUT)
+    if (ts.type == TT_END_OF_INPUT)
       break;
 
     // TODO: make this better???
@@ -291,7 +291,7 @@ struct Token *tokenize(char *line)
     {
       tokens_list = calloc(1, sizeof(struct Token));
       tokens_list->id = 0;
-      tokens_list->token_type = ts.token_type;
+      tokens_list->type = ts.type;
       tokens_list->prev = NULL;
 
       if (ts.text[0] != '\0')
@@ -311,7 +311,7 @@ struct Token *tokenize(char *line)
     current->next = calloc(1, sizeof(struct Token));
     current->next->id = current->id + 1;
     current->next->prev = current;
-    current->next->token_type = ts.token_type;
+    current->next->type = ts.type;
 
     if (ts.text[0] != '\0')
     {
@@ -380,10 +380,10 @@ void tokens_to_string(struct Token *tokens_list)
   while (current != NULL)
   {
     if (current->text)
-      printf("[%s:%d] - '%s'\n", token_stringify(current->token_type),
+      printf("[%s:%d] - '%s'\n", token_stringify(current->type),
           current->id, current->text);
     else
-      printf("[%s:%d]\n", token_stringify(current->token_type), current->id);
+      printf("[%s:%d]\n", token_stringify(current->type), current->id);
 
     current = current->next;
   }
