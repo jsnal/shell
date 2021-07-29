@@ -159,23 +159,7 @@ int execute_commands(struct Command *cmd)
   return exec_ret;
 }
 
-int execute_andor(struct AndOr *andor)
-{
-  printf("andor\n");
-}
-
-int execute_pipeline(struct Pipeline *pipeline)
-{
-  struct Cmd *current = pipeline->commands;
-
-  while (current != NULL)
-  {
-    printf("%s\n", current->argv[0]);
-    current = current->next;
-  }
-}
-
-int execute_simple_command(struct Cmd *command)
+int execute_simple_command(struct Cmd *command, int in, int out)
 {
   pid_t command_pid = fork();
 
@@ -187,6 +171,20 @@ int execute_simple_command(struct Cmd *command)
 
   if (command_pid == 0)
   {
+    printf("Executing command\n");
+
+    if (in != 0)
+    {
+      dup2(in, 0);
+      close(in);
+    }
+
+    if (out != 1)
+    {
+      dup2(out, 1);
+      close(out);
+    }
+
     struct Redirect *current = command->redirects;
     while (current != NULL)
     {
@@ -213,7 +211,7 @@ int execute_simple_command(struct Cmd *command)
       current = current->next;
     }
 
-    execvp(command->argv[0], command->argv);
+    return execvp(command->argv[0], command->argv);
 
     switch(errno)
     {
@@ -234,6 +232,40 @@ int execute_simple_command(struct Cmd *command)
   return command_pid;
 }
 
+int execute_andor(struct AndOr *andor)
+{
+  printf("andor\n");
+}
+
+int execute_pipeline(struct Pipeline *pipeline)
+{
+  if (pipeline->pipe_count == 0)
+    return execute_simple_command(pipeline->commands, 0, 1);
+
+  struct Cmd *current = pipeline->commands;
+  int fds[2], in;
+
+  while (current->next != NULL)
+  {
+    pipe(fds);
+    execute_simple_command(current, in, fds[1]);
+    close(fds[1]);
+    in = fds[0];
+    wait(NULL);
+    current = current->next;
+  }
+
+  dup2(fds[0], 0);
+  execute_simple_command(current, in, fds[1]);
+  wait(NULL);
+
+  /* current = pipeline->commands; */
+  /* while (current != NULL) */
+  /* { */
+  /*   current = current->next; */
+  /* } */
+}
+
 int execute(struct Tree *tree)
 {
   struct Node *current = tree->nodes;
@@ -249,7 +281,7 @@ int execute(struct Tree *tree)
         execute_pipeline(current->pipeline);
         break;
       case NT_SIMPLE_COMMAND:
-        execute_simple_command(current->command);
+        execute_simple_command(current->command, 0, 1);
         wait(NULL);
         break;
       default:

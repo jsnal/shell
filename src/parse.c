@@ -154,6 +154,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
 {
   struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
   struct Pipeline *pipeline = calloc(1, sizeof(struct Pipeline));
+  int pipe_count = 0;
 
   /* LinkedList iterators */
   struct Token *current_token = ps->tokens_list, *current_subtoken = NULL;
@@ -174,6 +175,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
         current_command = current_command->next;
       }
 
+      pipe_count++;
       pipeline_ps->tokens_list = NULL;
       current_subtoken = NULL;
       continue;
@@ -208,6 +210,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
   free(pipeline_ps);
 
   pipeline->type = AOT_NONE;
+  pipeline->pipe_count = pipe_count;
   return pipeline;
 }
 
@@ -444,6 +447,7 @@ void pipeline_to_string(struct Pipeline *pipeline, int space)
 {
   struct Cmd *current = pipeline->commands;
   printf("%*sPipeline\n", space, "");
+  printf("%*spipe count: %d\n", space + 1, "", pipeline->pipe_count);
   printf("%*sand/or: %s\n", space + 1, "", andor_type_to_string(pipeline->type));
 
   while (current != NULL)
@@ -460,7 +464,6 @@ void andor_to_string(struct AndOr *andor)
 
   while (current != NULL)
   {
-    printf("   Pipeline\n");
     pipeline_to_string(current, 3);
     current = current->next;
   }

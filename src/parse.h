@@ -61,6 +61,7 @@ struct Pipeline {
   struct Pipeline *next;
   struct Cmd *commands;
   enum AndOrType type;
+  int pipe_count;
 };
 
 struct AndOr {
