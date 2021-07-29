@@ -159,7 +159,7 @@ int execute_commands(struct Command *cmd)
   return exec_ret;
 }
 
-int execute_simple_command(struct Cmd *command, int in, int out)
+int execute_simple_command(struct Cmd *command, int pipe_count, int (*pipes)[2])
 {
   pid_t command_pid = fork();
 
@@ -173,17 +173,17 @@ int execute_simple_command(struct Cmd *command, int in, int out)
   {
     printf("Executing command\n");
 
-    if (in != 0)
-    {
-      dup2(in, 0);
-      close(in);
-    }
+    int input_fd = command->fds[0];
+    int output_fd = command->fds[1];
 
-    if (out != 1)
-    {
-      dup2(out, 1);
-      close(out);
-    }
+    if (input_fd != -1 && input_fd != STDIN_FILENO)
+      dup2(input_fd, STDIN_FILENO);
+
+    if (output_fd != -1 && output_fd != STDOUT_FILENO)
+      dup2(output_fd, STDOUT_FILENO);
+
+    if (pipes != NULL)
+      close_pipes(pipes, pipe_count);
 
     struct Redirect *current = command->redirects;
     while (current != NULL)
@@ -211,7 +211,7 @@ int execute_simple_command(struct Cmd *command, int in, int out)
       current = current->next;
     }
 
-    return execvp(command->argv[0], command->argv);
+    execvp(command->argv[0], command->argv);
 
     switch(errno)
     {
@@ -240,30 +240,61 @@ int execute_andor(struct AndOr *andor)
 int execute_pipeline(struct Pipeline *pipeline)
 {
   if (pipeline->pipe_count == 0)
-    return execute_simple_command(pipeline->commands, 0, 1);
+  {
+    execute_simple_command(pipeline->commands, 0, NULL);
+    wait(NULL);
+  }
 
   struct Cmd *current = pipeline->commands;
-  int fds[2], in;
+  int (*pipes)[2] = calloc(pipeline->pipe_count * sizeof(int[2]), 1);
+  int counter = 0, execute_return;
 
-  while (current->next != NULL)
+  if (pipes == NULL)
   {
-    pipe(fds);
-    execute_simple_command(current, in, fds[1]);
-    close(fds[1]);
-    in = fds[0];
-    wait(NULL);
+    fprintf(stderr, "error: exec_commands: calloc failed\n");
+    return 0;
+  }
+
+  struct Cmd *last = pipeline->commands;
+  pipeline->commands->fds[STDIN_FILENO] = STDIN_FILENO;
+  while (current != NULL)
+  {
+    if (pipe(pipes[counter - 1]) == -1)
+    {
+      fprintf(stderr, "error: exec_commands: creating pipe failed.\n");
+      close_pipes(pipes, pipeline->pipe_count);
+      free(pipes);
+      exit(EXIT_FAILURE);
+    }
+
+    if (current->next != NULL)
+      current->next->fds[STDIN_FILENO] = pipes[counter - 1][0];
+
+    current->fds[STDOUT_FILENO] = pipes[counter - 1][1];
+    counter++;
+    last = current;
+    current = current->next;
+  }
+  last->fds[STDOUT_FILENO] = STDOUT_FILENO;
+
+  current = pipeline->commands;
+  while (current != NULL)
+  {
+    execute_return = execute_simple_command(current, pipeline->pipe_count, pipes);
     current = current->next;
   }
 
-  dup2(fds[0], 0);
-  execute_simple_command(current, in, fds[1]);
-  wait(NULL);
+  close_pipes(pipes, pipeline->pipe_count);
 
-  /* current = pipeline->commands; */
-  /* while (current != NULL) */
-  /* { */
-  /*   current = current->next; */
-  /* } */
+  current = pipeline->commands;
+  while (current != NULL)
+  {
+    wait(NULL);
+    current = current->next;
+  }
+  free(pipes);
+
+  return execute_return;
 }
 
 int execute(struct Tree *tree)
@@ -281,7 +312,7 @@ int execute(struct Tree *tree)
         execute_pipeline(current->pipeline);
         break;
       case NT_SIMPLE_COMMAND:
-        execute_simple_command(current->command, 0, 1);
+        execute_simple_command(current->command, 0, NULL);
         wait(NULL);
         break;
       default:

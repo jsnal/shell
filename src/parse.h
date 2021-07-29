@@ -53,6 +53,7 @@ struct Cmd {
   struct Cmd *next;
   size_t argc;
   char *argv[ARG_MAX];
+  int fds[2];
   enum TerminatorType terminator;
   struct Redirect *redirects;
 };
