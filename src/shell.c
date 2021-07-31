@@ -103,8 +103,7 @@ int shell(int print_ast, int print_tokens)
   for(;;)
   {
     set_system_environment_variables();
-    printf("%s$ ", PWD);
-    line = read_line();
+    line = readline("$ ");
 
     if (!is_empty_line(line))
     {
@@ -116,7 +115,7 @@ int shell(int print_ast, int print_tokens)
       if (print_ast)
         tree_to_string(tree);
 
-      command_ret = execute(tree);
+      /* command_ret = execute(tree); */
 
       /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */
