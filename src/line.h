@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -15,6 +16,11 @@ enum KeyAction {
   ENTER = 13,
 };
 
+struct AppendBuffer {
+  char *buffer;
+  size_t length;
+};
+
 struct LineState {
   int fd_in;
   int fd_out;
@@ -24,6 +30,7 @@ struct LineState {
   size_t prompt_length;
   size_t cursor_position;
   size_t line_length;
+  size_t columns;
 };
 
 char *readline(const char*, int*);

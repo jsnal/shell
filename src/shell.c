@@ -118,7 +118,7 @@ int shell(int print_ast, int print_tokens)
       if (print_ast)
         tree_to_string(tree);
 
-      /* command_ret = execute(tree); */
+      command_ret = execute(tree);
 
       /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */

@@ -17,6 +17,81 @@ int is_unsupported_terminal()
   return 0;
 }
 
+int get_columns(int fd_in, int fd_out)
+{
+  struct winsize ws;
+
+  if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+  {
+    /* TODO create a fallback way of getting the columns */
+    fprintf(stderr, "error: get_columns: unable to get columns. Defaulting to 80.\n");
+    return 80;
+  }
+
+  return ws.ws_col;
+}
+
+void append_buffer_initialize(struct AppendBuffer *ab)
+{
+  ab->buffer = NULL;
+  ab->length = 0;
+}
+
+void append_buffer_append(struct AppendBuffer *ab, const char *str, size_t length)
+{
+  char *new = realloc(ab->buffer, ab->length + length);
+
+  if (new == NULL)
+    return;
+
+  memcpy(new + ab->length, str, length);
+  ab->buffer = new;
+  ab->length += length;
+}
+
+int refresh(struct LineState *state)
+{
+  char escape_sequence[64];
+  char *buffer = state->buffer;
+  size_t line_length = state->line_length;
+  size_t cursor_position = state->cursor_position;
+  struct AppendBuffer append_buffer;
+
+  while (state->prompt_length + state->cursor_position >= state->columns)
+  {
+    buffer++;
+    line_length--;
+    cursor_position--;
+  }
+
+  while ((state->prompt_length + state->line_length) > state->columns)
+    line_length--;
+
+  append_buffer_initialize(&append_buffer);
+
+  /* Move the cursor to the left edge */
+  snprintf(escape_sequence, 64, "\r");
+  append_buffer_append(&append_buffer, escape_sequence, strlen(escape_sequence));
+
+  append_buffer_append(&append_buffer, state->prompt, state->prompt_length);
+  append_buffer_append(&append_buffer, state->buffer, state->line_length);
+
+  /* Erase to right if something was deleted */
+  snprintf(escape_sequence, 64, "\x1b[0K");
+  append_buffer_append(&append_buffer, escape_sequence, strlen(escape_sequence));
+
+  /* Move cursor to original position */
+  snprintf(escape_sequence, 64, "\r\x1b[%dC",
+      (int) (state->cursor_position + state->prompt_length));
+  append_buffer_append(&append_buffer, escape_sequence, strlen(escape_sequence));
+
+  if (write(state->fd_out, append_buffer.buffer, append_buffer.length) == -1)
+    return -1;
+
+  free(append_buffer.buffer);
+  return 0;
+}
+
 int edit_insert(struct LineState *state, char c)
 {
   if (state->line_length >= state->bufferlen)
@@ -31,11 +106,19 @@ int edit_insert(struct LineState *state, char c)
   state->cursor_position++;
   state->line_length++;
   state->buffer[state->line_length] = '\0';
-  write(state->fd_out, &c, 1);
+
+  /* If possible, don't redraw the whole line */
+  if (state->line_length == state->cursor_position &&
+      state->prompt_length + state->line_length < state->columns)
+    write(state->fd_out, &c, 1);
+  else
+    if (refresh(state) == -1)
+      return -1;
+
   return 0;
 }
 
-void edit_backspace(struct LineState *state)
+int edit_backspace(struct LineState *state)
 {
   if (state->cursor_position > 0 && state->line_length > 0)
   {
@@ -45,11 +128,10 @@ void edit_backspace(struct LineState *state)
     state->cursor_position--;
     state->line_length--;
     state->buffer[state->line_length] = '\0';
+    if (refresh(state) == -1)
+      return -1;
   }
 }
-
-void refresh()
-{}
 
 int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prompt)
 {
@@ -62,6 +144,7 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
     .prompt_length = strlen(prompt),
     .line_length = 0,
     .cursor_position = 0,
+    .columns = get_columns(fd_in, fd_out),
   };
 
   state.buffer[0] = '\0';
@@ -93,12 +176,12 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
         return state.line_length;
       case BACKSPACE:
       case CTRL_H:
-        edit_backspace(&state);
+        if (edit_backspace(&state) == -1)
+          return -1;
         break;
       default:
         if (edit_insert(&state, c) == -1)
           return -1;
-        /* printf("character: %s\n", state.buffer); */
         break;
     }
   }
