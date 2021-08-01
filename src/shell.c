@@ -92,7 +92,7 @@ char *read_line(void)
 
 int shell(int print_ast, int print_tokens)
 {
-  unsigned int command_ret = 0;
+  int command_ret = 0, readline_status;
   char *history_line;
 
   if (initialize_history() == -1)
@@ -103,7 +103,10 @@ int shell(int print_ast, int print_tokens)
   for(;;)
   {
     set_system_environment_variables();
-    line = readline("$ ");
+
+    line = readline("$ ", &readline_status);
+    if (readline_status == -1)
+      return EXIT_FAILURE;
 
     if (!is_empty_line(line))
     {
@@ -135,6 +138,5 @@ int shell(int print_ast, int print_tokens)
       break;
   }
 
-  cleanup_history();
   return EXIT_SUCCESS;
 }

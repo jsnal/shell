@@ -1,5 +1,8 @@
 #include "line.h"
 
+char *unsupported_terminals[] = {"dumb", "emacs", NULL};
+struct termios orig_termios;
+
 int is_unsupported_terminal()
 {
   char *term = getenv("TERM");
@@ -16,11 +19,37 @@ int is_unsupported_terminal()
 
 int edit_insert(struct LineState *state, char c)
 {
-  if (state->line_length < state->bufferlen)
-  {
+  if (state->line_length >= state->bufferlen)
+    return -1;
 
+  if (state->line_length != state->cursor_position)
+    memmove(state->buffer + state->cursor_position + 1,
+        state->buffer + state->cursor_position,
+        state->line_length - state->cursor_position);
+
+  state->buffer[state->cursor_position] = c;
+  state->cursor_position++;
+  state->line_length++;
+  state->buffer[state->line_length] = '\0';
+  write(state->fd_out, &c, 1);
+  return 0;
+}
+
+void edit_backspace(struct LineState *state)
+{
+  if (state->cursor_position > 0 && state->line_length > 0)
+  {
+    memmove(state->buffer + state->cursor_position - 1,
+        state->buffer + state->cursor_position,
+        state->line_length - state->cursor_position);
+    state->cursor_position--;
+    state->line_length--;
+    state->buffer[state->line_length] = '\0';
   }
 }
+
+void refresh()
+{}
 
 int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prompt)
 {
@@ -52,16 +81,28 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
 
     switch (c)
     {
-      case 13:
-        printf("enter found!\n");
+      case CTRL_C:
+        return -1;
+      case CTRL_D:
+        if (state.line_length > 0)
+        { /* TODO: handle backwards kill word */ }
+        else
+          return -1;
+        break;
+      case ENTER:
         return state.line_length;
+      case BACKSPACE:
+      case CTRL_H:
+        edit_backspace(&state);
+        break;
       default:
-        printf("character\n");
-        state.buffer = "test";
+        if (edit_insert(&state, c) == -1)
+          return -1;
+        /* printf("character: %s\n", state.buffer); */
         break;
     }
-    return 0;
   }
+  return 0;
 }
 
 char *handle_unsupported_terminal(const char *prompt)
@@ -98,6 +139,8 @@ char *handle_unsupported_terminal(const char *prompt)
   return ret_line;
 }
 
+/* This function is pretty common in all line editing libraries
+ * so I pretty much shamlessly stole it. */
 int enable_raw_mode(int fd)
 {
   struct termios raw;
@@ -144,14 +187,16 @@ int handle_read_raw(char *buffer, size_t bufferlen, const char *prompt)
 
   if (enable_raw_mode(STDIN_FILENO) == -1)
     return -1;
-  edit(STDIN_FILENO, STDOUT_FILENO, buffer, bufferlen, prompt);
+  int status = edit(STDIN_FILENO, STDOUT_FILENO, buffer, bufferlen, prompt);
   disable_raw_mode(STDIN_FILENO);
   printf("\n");
+  return status;
 }
 
-char *readline(const char* prompt)
+char *readline(const char* prompt, int *status)
 {
-  char buffer[4096];
+  char buffer[LINE_LENGTH];
+  *status = 0;
 
   if (!isatty(STDIN_FILENO))
   {
@@ -164,7 +209,7 @@ char *readline(const char* prompt)
   }
   else
   {
-    int count = handle_read_raw(buffer, 4096, prompt);
+    *status = handle_read_raw(buffer, LINE_LENGTH, prompt);
     return strdup(buffer);
   }
 }
