@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "shell.h"
 #include <getopt.h>
 

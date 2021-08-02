@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef EXEC_H
 #define EXEC_H
 

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "builtin.h"
 
 int handle_cd(struct Command *cmd)

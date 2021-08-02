@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "parse.h"
 
 struct Token *consume_token(struct ParseState **ps, struct Token *token)

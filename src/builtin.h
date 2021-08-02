@@ -1,4 +1,10 @@
 #ifndef BUILTIN_H
+/*
+ * Copyright (c) 2021, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #define BUILTIN_H
 
 #include "shell.h"
