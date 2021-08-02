@@ -93,6 +93,7 @@ char *read_line(void)
 int shell(int print_ast, int print_tokens)
 {
   int command_ret = 0, readline_status;
+  char prompt[64];
   char *history_line;
 
   if (initialize_history() == -1)
@@ -103,8 +104,9 @@ int shell(int print_ast, int print_tokens)
   for(;;)
   {
     set_system_environment_variables();
+    snprintf(prompt, 64, "%s$ ", PWD);
 
-    line = readline("$ ", &readline_status);
+    line = readline(prompt, &readline_status);
     if (readline_status == -1)
       return EXIT_FAILURE;
 

@@ -7,11 +7,18 @@
 
 #define LINE_LENGTH 4096
 
+#define PERFORM_EDIT(edit) \
+  if (edit(&state) == -1) \
+    return -1
+
 enum KeyAction {
   KEY_NULL = 0,
+  CTRL_B = 2,
   CTRL_C = 3,
   CTRL_D = 4,
+  CTRL_F = 6,
   CTRL_H = 8,
+  CTRL_L = 12,
   BACKSPACE = 127,
   ENTER = 13,
 };

@@ -133,6 +133,40 @@ int edit_backspace(struct LineState *state)
   }
 }
 
+int edit_move_left(struct LineState *state)
+{
+  if (state->line_length > 0)
+  {
+    state->cursor_position--;
+    if (refresh(state) == -1)
+      return -1;
+  }
+  return 0;
+}
+
+int edit_move_right(struct LineState *state)
+{
+  if (state->line_length > 0)
+  {
+    state->cursor_position++;
+    if (refresh(state) == -1)
+      return -1;
+  }
+  return 0;
+}
+
+int edit_clear_screen(struct LineState *state)
+{
+  char *escape_sequence = "\x1b[H\x1b[2J";
+  if (write(state->fd_out, escape_sequence, strlen(escape_sequence)) <= 0)
+    return -1;
+
+  if (refresh(state) == -1)
+    return -1;
+
+  return 0;
+}
+
 int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prompt)
 {
   struct LineState state = {
@@ -155,7 +189,7 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
 
   for (;;)
   {
-    char c, seq[3];
+    char c;
     int nread;
 
     nread = read(state.fd_in, &c, 1);
@@ -164,6 +198,11 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
 
     switch (c)
     {
+      case ENTER:
+        return state.line_length;
+      case CTRL_B:
+        PERFORM_EDIT(edit_move_left);
+        break;
       case CTRL_C:
         return -1;
       case CTRL_D:
@@ -172,12 +211,15 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
         else
           return -1;
         break;
-      case ENTER:
-        return state.line_length;
+      case CTRL_F:
+        PERFORM_EDIT(edit_move_right);
+        break;
       case BACKSPACE:
       case CTRL_H:
-        if (edit_backspace(&state) == -1)
-          return -1;
+        PERFORM_EDIT(edit_backspace);
+        break;
+      case CTRL_L:
+        PERFORM_EDIT(edit_clear_screen);
         break;
       default:
         if (edit_insert(&state, c) == -1)
