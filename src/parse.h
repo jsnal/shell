@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Jason Long.
+ * Copyright (c) 2021-2022, Jason Long.
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021-2022, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 #ifndef DEBUG_H
 #define DEBUG_H
 
