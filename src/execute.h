@@ -16,4 +16,9 @@
 
 int execute(struct Tree*);
 
+struct PipelineSummary {
+  int command_count;
+  int (*pfds)[2];
+};
+
 #endif

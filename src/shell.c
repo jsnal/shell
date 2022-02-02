@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
-
 #include "shell.h"
 
 char *line;

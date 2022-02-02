@@ -9,18 +9,20 @@ CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon
 SOURCES = \
 					src/builtin.c \
 					src/command.c \
+					src/debug.c \
 					src/execute.c \
 					src/history.c \
 					src/line.c \
-					src/main.c \
 					src/parse.c \
 					src/redirect.c \
 					src/shell.c \
 					src/tokenize.c
 
-OBJECTS = ${SOURCES:.c=.o}
+OBJECTS = src/main.o
+OBJECTS += ${SOURCES:.c=.o}
+HEADERS = ${SOURCES:.c=.h}
 
-$(NAME): $(OBJECTS)
+$(NAME): $(OBJECTS) $(HEADERS)
 	$(CC) -o $@ $(OBJECTS)
 
 .PHONY: clean

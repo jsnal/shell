@@ -5,6 +5,8 @@
  */
 
 #include "shell.h"
+
+#include "debug.h"
 #include <getopt.h>
 
 static struct option const longopts[] =
