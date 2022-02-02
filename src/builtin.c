@@ -17,15 +17,14 @@ int handle_cd(struct Command *cmd)
     return 1;
   }
 
-  if (cmd->argc == 1)
-    cd_ret = chdir(SYS_HOME);
-  else if (strcmp(cmd->argv[1], "-") == 0)
-  {
-    if (OLDPWD == NULL)
-      printf("cd: no last working directory");
-
-    cd_ret = chdir(OLDPWD);
-    printf("%s\n", OLDPWD);
+  if (cmd->argc == 1) {
+    /* cd_ret = chdir(SYS_HOME); */
+  } else if (strcmp(cmd->argv[1], "-") == 0) {
+    /* if (OLDPWD == NULL) */
+    /*   printf("cd: no last working directory"); */
+    /*  */
+    /* cd_ret = chdir(OLDPWD); */
+    /* printf("%s\n", OLDPWD); */
   }
   else
     cd_ret = chdir(cmd->argv[1]);
@@ -46,10 +45,10 @@ int handle_cd(struct Command *cmd)
     return 1;
   }
 
-  setenv("OLDPWD", getenv("PWD"), 1);
-  if ((cwd = getcwd(NULL, 0)) != NULL)
-    setenv("PWD", cwd, 1);
-  free(cwd);
+  /* setenv("OLDPWD", getenv("PWD"), 1); */
+  /* if ((cwd = getcwd(NULL, 0)) != NULL) */
+  /*   setenv("PWD", cwd, 1); */
+  /* free(cwd); */
 
   return 0;
 }
@@ -82,15 +81,15 @@ int exec_builtin(struct Builtin *builtin, struct Command *cmd)
   return (builtin->func)(cmd);
 }
 
-struct Builtin *check_builtin(struct Command *cmd)
+struct Builtin *check_builtin(struct Command *command)
 {
   struct Builtin *front = builtin;
   struct Builtin *back = builtin + sizeof(builtin)/sizeof(builtin[0]);
 
-  while (front < back)
-  {
-    if (strcmp(cmd->name, front->name) == 0)
+  while (front < back) {
+    if (strcmp(command->argv[0], front->name) == 0) {
       return front;
+    }
 
     front++;
   }

@@ -1,15 +1,14 @@
-#ifndef BUILTIN_H
 /*
  * Copyright (c) 2021, Jason Long.
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#ifndef BUILTIN_H
 #define BUILTIN_H
 
 #include "shell.h"
 #include "history.h"
-#include "command.h"
 
 struct Builtin {
   char *name;

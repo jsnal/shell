@@ -55,8 +55,8 @@ enum AndOrType {
 };
 
 // TODO: rename this after I delete the old one
-struct Cmd {
-  struct Cmd *next;
+struct Command {
+  struct Command *next;
   size_t argc;
   char *argv[ARG_MAX];
   int fds[2];
@@ -66,7 +66,7 @@ struct Cmd {
 
 struct Pipeline {
   struct Pipeline *next;
-  struct Cmd *commands;
+  struct Command *commands;
   enum AndOrType type;
   int pipe_count;
 };
@@ -91,7 +91,7 @@ struct Node {
   struct Node *next;
   enum NodeType type;
   union {
-    struct Cmd *command;
+    struct Command *command;
     struct Pipeline *pipeline;
     struct AndOr *andor;
   };
@@ -110,7 +110,7 @@ struct ParseState {
 struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
 char *terminator_to_string(enum TerminatorType);
-void command_to_string(struct Cmd*, int space);
+void command_to_string(struct Command*, int space);
 void pipeline_to_string(struct Pipeline*, int space);
 void andor_to_string(struct AndOr*);
 #endif

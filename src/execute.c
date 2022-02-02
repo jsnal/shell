@@ -16,7 +16,7 @@ static void close_pipes(struct PipelineSummary *ps)
   }
 }
 
-static int execute_simple_command(struct Cmd *command, struct PipelineSummary *ps)
+static int execute_simple_command(struct Command *command, struct PipelineSummary *ps)
 {
   pid_t command_pid = fork();
 
@@ -95,7 +95,7 @@ int execute_pipeline(struct Pipeline *pipeline)
     }
   }
 
-  struct Cmd *current = pipeline->commands;
+  struct Command *current = pipeline->commands;
   current->fds[STDIN_FILENO] = STDIN_FILENO;
 
   for (int i = 0; i < ps.command_count; i++) {

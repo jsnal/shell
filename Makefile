@@ -8,7 +8,6 @@ CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon
 
 SOURCES = \
 					src/builtin.c \
-					src/command.c \
 					src/debug.c \
 					src/execute.c \
 					src/history.c \

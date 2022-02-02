@@ -16,8 +16,9 @@ void cleanup_history()
 
 void clean()
 {
-  if (command) cleanup_commands(command);
-  if (history) cleanup_history();
+  if (history) {
+    cleanup_history();
+  }
 }
 
 void exit_clean(int code)
@@ -44,24 +45,24 @@ int is_empty_line(char *line)
 
 void initialize_system_environment_variables()
 {
-  char *cwd;
-  if ((cwd = getcwd(NULL, 0)) != NULL)
-    setenv("PWD", cwd, 1);
-  free(cwd);
-
-  if ((SYS_HOME = getenv("HOME")) == NULL)
-    SYS_HOME = getpwuid(getuid())->pw_dir;
-
-  setenv("OLDPWD", SYS_HOME, 1);
+  /* char *cwd; */
+  /* if ((cwd = getcwd(NULL, 0)) != NULL) */
+  /*   setenv("PWD", cwd, 1); */
+  /* free(cwd); */
+  /*  */
+  /* if ((SYS_HOME = getenv("HOME")) == NULL) */
+  /*   SYS_HOME = getpwuid(getuid())->pw_dir; */
+  /*  */
+  /* setenv("OLDPWD", SYS_HOME, 1); */
 }
 
 void set_system_environment_variables()
 {
-  if ((SYS_PATH = getenv("PATH")) == NULL)
-    SYS_PATH = "/bin";
-
-  PWD = getenv("PWD");
-  OLDPWD = getenv("OLDPWD");
+  /* if ((SYS_PATH = getenv("PATH")) == NULL) */
+  /*   SYS_PATH = "/bin"; */
+  /*  */
+  /* PWD = getenv("PWD"); */
+  /* OLDPWD = getenv("OLDPWD"); */
 }
 
 char *read_line(void)
@@ -108,8 +109,7 @@ int shell(int print_ast, int print_tokens)
 
   for(;;)
   {
-    set_system_environment_variables();
-    snprintf(prompt, 64, "%s$ ", PWD);
+    snprintf(prompt, 64, "%s$ ", "shell");
 
     line = readline(prompt, &readline_status);
     if (readline_status == -1)

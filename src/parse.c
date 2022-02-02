@@ -111,14 +111,14 @@ found_redirect:
   return redirect;
 }
 
-struct Cmd *parse_simple_command(struct ParseState *ps)
+struct Command *parse_simple_command(struct ParseState *ps)
 {
   struct Redirect *redirects = scan_tokens_for_redirect(ps), *next_redirect;
   while (redirects != NULL && (next_redirect = scan_tokens_for_redirect(ps)) != NULL)
     redirects->next = next_redirect;
 
   struct Token *current = ps->tokens_list;
-  struct Cmd *cmd = calloc(1, sizeof(struct Cmd));
+  struct Command *cmd = calloc(1, sizeof(struct Command));
   size_t argc = 0;
 
   cmd->redirects = redirects;
@@ -164,7 +164,7 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
 
   /* LinkedList iterators */
   struct Token *current_token = ps->tokens_list, *current_subtoken = NULL;
-  struct Cmd *current_command = NULL;
+  struct Command *current_command = NULL;
 
   while (current_token != NULL)
   {
@@ -424,7 +424,7 @@ char *andor_type_to_string(enum AndOrType aot)
   return "unknown value";
 }
 
-void command_to_string(struct Cmd *cmd, int space)
+void command_to_string(struct Command *cmd, int space)
 {
   printf("%*sSimple Command\n", space, "");
   printf("%*sargc: %ld\n", space + 1, "", cmd->argc);
@@ -451,7 +451,7 @@ void command_to_string(struct Cmd *cmd, int space)
 
 void pipeline_to_string(struct Pipeline *pipeline, int space)
 {
-  struct Cmd *current = pipeline->commands;
+  struct Command *current = pipeline->commands;
   printf("%*sPipeline\n", space, "");
   printf("%*spipe count: %d\n", space + 1, "", pipeline->pipe_count);
   printf("%*sand/or: %s\n", space + 1, "", andor_type_to_string(pipeline->type));
