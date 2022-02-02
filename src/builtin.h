@@ -7,15 +7,14 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
-#include "shell.h"
-#include "history.h"
+#include "parse.h"
 
-struct Builtin {
+typedef struct Builtin {
   char *name;
-  int (*func)(struct Command *);
-};
+  int (*func)(struct Command *command);
+} builtin_t;
 
-struct Builtin *check_builtin(struct Command*);
-int exec_builtin(struct Builtin*, struct Command*);
+builtin_t *check_builtin(struct Command *command);
+int exec_builtin(builtin_t *builtin, struct Command *command);
 
 #endif

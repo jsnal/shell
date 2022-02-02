@@ -132,11 +132,10 @@ int execute_pipeline(struct Pipeline *pipeline)
 int execute(struct Tree *tree)
 {
   struct Node *current = tree->nodes;
+  builtin_t *builtin;
 
-  while (current != NULL)
-  {
-    switch (current->type)
-    {
+  while (current != NULL) {
+    switch (current->type) {
       case NT_ANDOR:
         execute_andor(current->andor);
         break;
@@ -144,6 +143,10 @@ int execute(struct Tree *tree)
         execute_pipeline(current->pipeline);
         break;
       case NT_SIMPLE_COMMAND:
+        if ((builtin = check_builtin(current->command))) {
+          return exec_builtin(builtin, current->command);
+        }
+
         execute_simple_command(current->command, NULL);
         wait(NULL);
         break;

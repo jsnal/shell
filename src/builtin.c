@@ -5,21 +5,24 @@
  */
 
 #include "builtin.h"
+#include "debug.h"
+#include "history.h"
+#include "shell.h"
 
-int handle_cd(struct Command *cmd)
+static int handle_cd(struct Command *command)
 {
   unsigned int cd_ret = 0;
   char *cwd;
 
-  if (cmd->argc > 2)
+  if (command->argc > 2)
   {
     fprintf(stderr, "cd: too many arguments\n");
     return 1;
   }
 
-  if (cmd->argc == 1) {
+  if (command->argc == 1) {
     /* cd_ret = chdir(SYS_HOME); */
-  } else if (strcmp(cmd->argv[1], "-") == 0) {
+  } else if (strcmp(command->argv[1], "-") == 0) {
     /* if (OLDPWD == NULL) */
     /*   printf("cd: no last working directory"); */
     /*  */
@@ -27,21 +30,11 @@ int handle_cd(struct Command *cmd)
     /* printf("%s\n", OLDPWD); */
   }
   else
-    cd_ret = chdir(cmd->argv[1]);
+    cd_ret = chdir(command->argv[1]);
 
 
-  if (cd_ret != 0)
-  {
-    switch (errno)
-    {
-      case ENOENT:
-        fprintf(stderr, "cd: no such directory: %s\n", cmd->argv[1]);
-        break;
-      default:
-        fprintf(stderr, "cd: unable to change directory\n");
-        break;
-    }
-
+  if (cd_ret != 0) {
+    errln("%s: %s", strerror(errno), command->argv[1]);
     return 1;
   }
 
@@ -53,38 +46,37 @@ int handle_cd(struct Command *cmd)
   return 0;
 }
 
-int handle_exit(struct Command *cmd)
+static int handle_exit(struct Command *command)
 {
   printf("Goodbye!\n");
-  return -1;
+  return EXIT_SUCCESS;
 }
 
-int handle_history(struct Command *cmd)
+static int handle_history(struct Command *command)
 {
-  for (unsigned int i = 0; history->list[i] != NULL; i++)
-  {
+  for (unsigned int i = 0; history->list[i] != NULL; i++) {
     printf(" %d  %s\n", i + 1, history->list[i]);
   }
 
   return 0;
 }
 
-static struct Builtin builtin[] = {
+static builtin_t builtin[] = {
   { "cd",      handle_cd },
   { "logout",  handle_exit },
   { "exit",    handle_exit },
   { "history", handle_history }
 };
 
-int exec_builtin(struct Builtin *builtin, struct Command *cmd)
+int exec_builtin(builtin_t *builtin, struct Command *command)
 {
-  return (builtin->func)(cmd);
+  return (builtin->func)(command);
 }
 
-struct Builtin *check_builtin(struct Command *command)
+builtin_t *check_builtin(struct Command *command)
 {
-  struct Builtin *front = builtin;
-  struct Builtin *back = builtin + sizeof(builtin)/sizeof(builtin[0]);
+  builtin_t *front = builtin;
+  builtin_t *back = builtin + sizeof(builtin) / sizeof(builtin[0]);
 
   while (front < back) {
     if (strcmp(command->argv[0], front->name) == 0) {
