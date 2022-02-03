@@ -5,6 +5,7 @@
  */
 
 #include "parse.h"
+#include "debug.h"
 
 struct Token *consume_token(struct ParseState **ps, struct Token *token)
 {
@@ -360,7 +361,7 @@ enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 
       return NT_SIMPLE_COMMAND;
     default:
-      fprintf(stderr, "error: scan_tokens_for_node_type: illegal symbol\n");
+      errln("Illegal symbol found");
       return NT_ERROR;
   }
 }
@@ -376,15 +377,14 @@ struct Tree *parse(struct Token *tokens_list)
   };
 
 
-  while (ps.tokens_list != NULL)
-  {
-    if ((ps.type = scan_tokens_for_node_type(&ps)) == NT_ERROR)
+  while (ps.tokens_list != NULL) {
+    if ((ps.type = scan_tokens_for_node_type(&ps)) == NT_ERROR) {
       return NULL;
+    }
 
-    if (head_node == NULL)
+    if (head_node == NULL) {
       head_node = current = parse_to_node(&ps);
-    else
-    {
+    } else {
       current->next = parse_to_node(&ps);
       current = current->next;
     }

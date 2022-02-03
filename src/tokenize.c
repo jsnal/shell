@@ -96,7 +96,7 @@ enum TokenType tokenize_reserved_words(char *t)
   return ret;
 }
 
-int is_reserved_text(char c)
+int is_reserved_text(const char c)
 {
   if (c == '(' || c == ')' || c == '{' || c == '}' || c == '!' || c == ';' ||
       c == '&' || c == '|' || c == '>' || c == '<' || c == '#')

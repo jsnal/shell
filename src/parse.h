@@ -54,7 +54,6 @@ enum AndOrType {
   AOT_NONE,
 };
 
-// TODO: rename this after I delete the old one
 struct Command {
   struct Command *next;
   size_t argc;

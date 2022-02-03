@@ -125,6 +125,9 @@ int shell(int print_ast, int print_tokens)
       if (print_ast)
         tree_to_string(tree);
 
+      if (!tree) {
+        continue;
+      }
       command_ret = execute(tree);
 
       /* history_line = strdup(line); */
