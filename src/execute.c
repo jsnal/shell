@@ -112,7 +112,7 @@ static int execute_pipeline(pipeline_t *pipeline)
   current->fds[STDOUT_FILENO] = STDOUT_FILENO;
 
   for (current = pipeline->commands; current != NULL; current = current->next) {
-    if (execute_simple_command(current, &ps) < 0) {
+    if ((current->pid = execute_simple_command(current, &ps)) < 0) {
       errln("Problem running command %s\n", current->argv[0]);
     }
   }
@@ -121,7 +121,7 @@ static int execute_pipeline(pipeline_t *pipeline)
 
   int ret = 0;
   for (current = pipeline->commands; current != NULL; current = current->next) {
-    wait(&ret);
+    waitpid(current->pid, &ret, 0);
   }
 
   return ret;
@@ -129,22 +129,21 @@ static int execute_pipeline(pipeline_t *pipeline)
 
 static int execute_andor(andor_t *andor)
 {
-  int ret;
+  int ret = EXIT_FAILURE;
   pipeline_t *current;
 
   for (current = andor->pipelines; current != NULL; current = current->next) {
-    /* warnln("looping!"); */
     ret = execute_pipeline(current);
-    /* warnln("%d %d %d", ret, WIFEXITED(ret), WEXITSTATUS(ret)); */
-    if (current->type == AOT_AND && WEXITSTATUS(ret) != 0) {
-      /* warnln("returning"); */
-      return -1;
-    } else if (current->type == AOT_OR) {
 
+    /* TODO: fix compound andors */
+    if (current->type == AOT_AND && WEXITSTATUS(ret) != 0) {
+      return -1;
+    } else if (current->type == AOT_OR && WEXITSTATUS(ret) == 0) {
+      return 0;
     }
   }
 
-  return 0;
+  return ret;
 }
 
 int execute(struct Tree *tree)

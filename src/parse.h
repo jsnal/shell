@@ -59,6 +59,7 @@ typedef struct Command {
   size_t argc;
   char *argv[ARG_MAX];
   int fds[2];
+  pid_t pid;
   enum TerminatorType terminator;
   struct Redirect *redirects;
 } command_t;

@@ -122,6 +122,7 @@ struct Command *parse_simple_command(struct ParseState *ps)
 
   cmd->redirects = redirects;
   cmd->terminator = MT_NONE;
+  cmd->pid = -1;
 
   while (current != NULL)
   {
