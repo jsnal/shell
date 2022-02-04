@@ -10,12 +10,13 @@ SOURCES = \
 					src/builtin.c \
 					src/debug.c \
 					src/execute.c \
+					src/hashtable.c \
 					src/history.c \
 					src/line.c \
 					src/parse.c \
 					src/redirect.c \
 					src/shell.c \
-					src/tokenize.c
+					src/tokenize.c \
 
 OBJECTS = src/main.o
 OBJECTS += ${SOURCES:.c=.o}
