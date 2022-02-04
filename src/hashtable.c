@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include "hashtable.h"
 #include "debug.h"
+#include "hashtable.h"
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <errno.h>
 
 hashtable_t *hashtable_create()
 {
@@ -70,27 +71,84 @@ void *hashtable_get(hashtable_t *table, const char *key)
   return NULL;
 }
 
-static const char *hashtable_set_entry(hashtable_t *table, const char *key,
-    void *value)
+static const char *hashtable_put_entry(hashtable_entry_t *entries, int capacity,
+    const char *key, void *value, int *length)
 {
-  int index = (int) (hash_key(key) & (uint64_t) (table->capacity - 1));
+  int index = (int) (hash_key(key) & (uint64_t) (capacity - 1));
 
-  for (; table->entries[index].key != NULL; index++) {
-    if (strcmp(key, table->entries[index].key) == 0) {
-      table->entries[index].value = value;
-      return table->entries[index].key;
+  for (; entries[index].key != NULL; index++) {
+    if (strcmp(key, entries[index].key) == 0) {
+      entries[index].value = value;
+      return entries[index].key;
     }
 
-    if (index >= table->capacity) {
+    if (index >= capacity) {
       index = 0;
     }
   }
 
-  table->entries[index].key = (char*) strdup(key);
-  table->entries[index].value = value;
-  table->length++;
+  if ((key = strdup(key)) == NULL) {
+    errln("%s", strerror(errno));
+    return NULL;
+  }
+
+  if (length != NULL) {
+    key = strdup(key);
+    if (key == NULL) {
+      return NULL;
+    }
+    (*length)++;
+  }
+
+  entries[index].key = (char*) key;
+  entries[index].value = value;
 
   return key;
+}
+
+static bool hashtable_resize(hashtable_t *table)
+{
+  int new_capacity = table->capacity * 2;
+  if (new_capacity < table->capacity) {
+    return false;
+  }
+
+  hashtable_entry_t *new_entries =
+    (hashtable_entry_t*) calloc(new_capacity, sizeof(hashtable_entry_t));
+
+  if (new_entries == NULL) {
+    return false;
+  }
+
+  for (int i = 0; i < table->capacity; i++) {
+    hashtable_entry_t entry = table->entries[i];
+
+    if (entry.key != NULL) {
+      hashtable_put_entry(new_entries, new_capacity, entry.key,
+          entry.value, NULL);
+    }
+  }
+
+  free(table->entries);
+  table->entries = new_entries;
+  table->capacity = new_capacity;
+  return true;
+}
+
+const char *hashtable_put(hashtable_t *table, const char *key, void *value)
+{
+  if (value == NULL) {
+    return NULL;
+  }
+
+  if (table->length >= table->capacity / 2) {
+    if (!hashtable_resize(table)) {
+      return NULL;
+    }
+  }
+
+  return hashtable_put_entry(table->entries, table->capacity, key,
+      value, &table->length);
 }
 
 size_t hashtable_length(const hashtable_t *table)

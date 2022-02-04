@@ -26,4 +26,10 @@ typedef struct HashTable {
   size_t length;
 } hashtable_t;
 
+hashtable_t *hashtable_create();
+void hashtable_destroy(hashtable_t *table);
+void *hashtable_get(hashtable_t *table, const char *key);
+const char *hashtable_put(hashtable_t *table, const char *key, void *value);
+size_t hashtable_length(const hashtable_t *table);
+
 #endif
