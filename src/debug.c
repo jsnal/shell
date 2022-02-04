@@ -19,3 +19,15 @@ int errln(const char *fmt, ...)
     return ret;
 }
 
+int warnln(const char *fmt, ...)
+{
+    va_list args;
+    fprintf(stdout, YELLOW BOLD "shell: " RESET);
+    va_start(args, fmt);
+    int ret = vfprintf(stdout, fmt, args);
+    va_end(args);
+    fprintf(stdout, "\n");
+
+    return ret;
+}
+

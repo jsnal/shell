@@ -18,7 +18,7 @@
 #define ARG_MAX 512
 
 #define TODO \
-  printf("Node type not implemented yet.\n"); \
+  warnln("Node type not implemented yet"); \
   return NULL
 
 enum RedirectType {

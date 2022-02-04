@@ -8,9 +8,11 @@
 
 #define RED   "\x1B[31m"
 #define GREEN "\x1B[32m"
+#define YELLOW "\x1B[33m"
 #define BOLD  "\x1B[1m"
 #define RESET "\x1B[0m"
 
 int errln(const char *fmt, ...);
+int warnln(const char *fmt, ...);
 
 #endif

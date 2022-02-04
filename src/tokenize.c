@@ -6,6 +6,12 @@
 
 #include "tokenize.h"
 
+#define RESERVED_SYMBOLS_SIZE 12
+
+static char reserved_symbols[RESERVED_SYMBOLS_SIZE] = {
+  '(', ')', '{', '}', '!', ';', '&', '|', '>', '<', '#', '='
+};
+
 void cleanup_token_list(struct Token *tokens_list)
 {
   struct Token *head;
@@ -98,9 +104,11 @@ enum TokenType tokenize_reserved_words(char *t)
 
 int is_reserved_text(const char c)
 {
-  if (c == '(' || c == ')' || c == '{' || c == '}' || c == '!' || c == ';' ||
-      c == '&' || c == '|' || c == '>' || c == '<' || c == '#')
-    return 1;
+  for (int i = 0; i < RESERVED_SYMBOLS_SIZE; i++) {
+    if (c == reserved_symbols[i]) {
+      return 1;
+    }
+  }
 
   return 0;
 }
@@ -163,6 +171,9 @@ void next_token(struct TokenState *ts)
       break;
     case '!':
       SET_TYPE_INC(TT_BANG);
+      break;
+    case '=':
+      SET_TYPE_INC(TT_EQUAL);
       break;
     case ';':
       index++;
@@ -342,6 +353,7 @@ char *token_stringify(enum TokenType token)
     TO_STRING(TT_LPAREN, "Left Paren");
     TO_STRING(TT_RPAREN, "Right Paren");
     TO_STRING(TT_SEMICOLON, "Semicolon");
+    TO_STRING(TT_EQUAL, "Equal");
     TO_STRING(TT_DOUBLE_SEMICOLON, "Double Semicolon");
     TO_STRING(TT_PIPE, "Pipe");
     TO_STRING(TT_PIPEPIPE, "PipePipe");

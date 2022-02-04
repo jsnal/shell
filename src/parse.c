@@ -51,12 +51,10 @@ struct Token *consume_token(struct ParseState **ps, struct Token *token)
 struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 {
   struct Token *current = ps->tokens_list;
-  struct Redirect *redirect = calloc(1, sizeof(struct Redirect));
+  struct Redirect *redirect = (struct Redirect*) malloc(sizeof(struct Redirect));
 
-  while (current != NULL)
-  {
-    switch (current->type)
-    {
+  while (current != NULL) {
+    switch (current->type) {
       case TT_LESS:
         redirect->type = RT_INPUT;
         goto found_redirect;
@@ -86,6 +84,7 @@ struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
       case TT_LESSLPAREN:
       case TT_GREATERAMP:
       case TT_GREATERLPAREN:
+      case TT_EQUAL:
         TODO;
       default:
         break;
@@ -98,9 +97,8 @@ struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
   return NULL;
 
 found_redirect:
-  if (current->next == NULL || current->next->text == NULL)
-  {
-    fprintf(stderr, "error: no redirection file\n");
+  if (current->next == NULL || current->next->text == NULL) {
+    errln("No redirection file");
     // TODO: fail without exiting whole shell
     return NULL;
   }
@@ -277,7 +275,7 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
 struct Node *parse_to_node(struct ParseState *ps)
 {
-  struct Node *node = calloc(1, sizeof(struct Node));
+  struct Node *node = (struct Node*) malloc(sizeof(struct Node));
   node->type = ps->type;
 
   switch (ps->type)
@@ -342,8 +340,7 @@ int scan_tokens_for_pipeline(struct ParseState *ps)
 
 enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 {
-  switch (ps->tokens_list->type)
-  {
+  switch (ps->tokens_list->type) {
     case TT_IF:
       return NT_IF;
     case TT_WHILE:
