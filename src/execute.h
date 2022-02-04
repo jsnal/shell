@@ -15,9 +15,9 @@
 
 int execute(struct Tree*);
 
-struct PipelineSummary {
+typedef struct PipelineState {
   int command_count;
   int (*pfds)[2];
-};
+} pipelinestate_t;
 
 #endif

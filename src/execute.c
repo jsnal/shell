@@ -8,7 +8,7 @@
 #include "debug.h"
 #include <stdbool.h>
 
-static void close_pipes(struct PipelineSummary *ps)
+static void close_pipes(pipelinestate_t *ps)
 {
   for (int i = 0; i < ps->command_count - 1; i++) {
     close(ps->pfds[i][0]);
@@ -16,7 +16,7 @@ static void close_pipes(struct PipelineSummary *ps)
   }
 }
 
-static int execute_simple_command(struct Command *command, struct PipelineSummary *ps)
+static int execute_simple_command(command_t *command, pipelinestate_t *ps)
 {
   pid_t command_pid = fork();
 
@@ -71,19 +71,16 @@ static int execute_simple_command(struct Command *command, struct PipelineSummar
   return command_pid;
 }
 
-int execute_andor(struct AndOr *andor)
-{
-  printf("andor\n");
-}
-
-int execute_pipeline(struct Pipeline *pipeline)
+static int execute_pipeline(pipeline_t *pipeline)
 {
   if (pipeline->pipe_count == 0) {
     execute_simple_command(pipeline->commands, NULL);
-    return 0;
+    int ret;
+    wait(&ret);
+    return ret;
   }
 
-  struct PipelineSummary ps = {
+  pipelinestate_t ps = {
     .command_count = pipeline->pipe_count + 1,
     .pfds = malloc(sizeof(int[2]) * pipeline->pipe_count)
   };
@@ -95,7 +92,7 @@ int execute_pipeline(struct Pipeline *pipeline)
     }
   }
 
-  struct Command *current = pipeline->commands;
+  command_t *current = pipeline->commands;
   current->fds[STDIN_FILENO] = STDIN_FILENO;
 
   for (int i = 0; i < ps.command_count; i++) {
@@ -122,11 +119,32 @@ int execute_pipeline(struct Pipeline *pipeline)
 
   close_pipes(&ps);
 
+  int ret = 0;
   for (current = pipeline->commands; current != NULL; current = current->next) {
-    wait(NULL);
+    wait(&ret);
   }
 
-  return EXIT_SUCCESS;
+  return ret;
+}
+
+static int execute_andor(andor_t *andor)
+{
+  int ret;
+  pipeline_t *current;
+
+  for (current = andor->pipelines; current != NULL; current = current->next) {
+    /* warnln("looping!"); */
+    ret = execute_pipeline(current);
+    /* warnln("%d %d %d", ret, WIFEXITED(ret), WEXITSTATUS(ret)); */
+    if (current->type == AOT_AND && WEXITSTATUS(ret) != 0) {
+      /* warnln("returning"); */
+      return -1;
+    } else if (current->type == AOT_OR) {
+
+    }
+  }
+
+  return 0;
 }
 
 int execute(struct Tree *tree)
@@ -137,8 +155,7 @@ int execute(struct Tree *tree)
   while (current != NULL) {
     switch (current->type) {
       case NT_ANDOR:
-        execute_andor(current->andor);
-        break;
+        return execute_andor(current->andor);
       case NT_PIPELINE:
         execute_pipeline(current->pipeline);
         break;

@@ -275,7 +275,7 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
 struct Node *parse_to_node(struct ParseState *ps)
 {
-  struct Node *node = (struct Node*) malloc(sizeof(struct Node));
+  struct Node *node = (struct Node*) calloc(1, sizeof(struct Node));
   node->type = ps->type;
 
   switch (ps->type)

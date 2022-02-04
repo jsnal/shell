@@ -54,26 +54,26 @@ enum AndOrType {
   AOT_NONE,
 };
 
-struct Command {
+typedef struct Command {
   struct Command *next;
   size_t argc;
   char *argv[ARG_MAX];
   int fds[2];
   enum TerminatorType terminator;
   struct Redirect *redirects;
-};
+} command_t;
 
-struct Pipeline {
+typedef struct Pipeline {
   struct Pipeline *next;
   struct Command *commands;
   enum AndOrType type;
   int pipe_count;
-};
+} pipeline_t;
 
-struct AndOr {
+typedef struct AndOr {
   struct AndOr *next;
   struct Pipeline *pipelines;
-};
+} andor_t;
 
 enum NodeType {
   NT_ANDOR,

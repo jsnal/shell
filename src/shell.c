@@ -143,9 +143,6 @@ int shell(int print_ast, int print_tokens)
     }
 
     free(line);
-
-    if (command_ret == -1)
-      break;
   }
 
   return EXIT_SUCCESS;
