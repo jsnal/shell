@@ -87,11 +87,6 @@ static const char *hashtable_put_entry(hashtable_entry_t *entries, int capacity,
     }
   }
 
-  if ((key = strdup(key)) == NULL) {
-    errln("%s", strerror(errno));
-    return NULL;
-  }
-
   if (length != NULL) {
     key = strdup(key);
     if (key == NULL) {
