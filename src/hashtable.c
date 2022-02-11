@@ -72,7 +72,7 @@ void *hashtable_get(hashtable_t *table, const char *key)
 }
 
 static const char *hashtable_put_entry(hashtable_entry_t *entries, int capacity,
-    const char *key, void *value, int *length)
+    const char *key, void *value, size_t *length)
 {
   int index = (int) (hash_key(key) & (uint64_t) (capacity - 1));
 

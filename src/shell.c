@@ -3,7 +3,10 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
+
+#include "debug.h"
 #include "shell.h"
+#include "variable.h"
 
 char *line;
 
@@ -98,6 +101,9 @@ char *read_line(void)
 
 int shell(int print_ast, int print_tokens)
 {
+
+  dbgln("Starting shell");
+
   int command_ret = 0, readline_status;
   char prompt[64];
   char *history_line;
@@ -105,7 +111,10 @@ int shell(int print_ast, int print_tokens)
   if (initialize_history() == -1)
     fprintf(stderr, "error: history: unable to initialize history\n");
 
-  initialize_system_environment_variables();
+  variable_scope_t *main_scope;
+  if ((main_scope = initialize_main_scope()) == NULL) {
+    errln("Failed to initialize main scope");
+  }
 
   for(;;)
   {

@@ -3,7 +3,7 @@ CC = gcc
 NAME = shell
 CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon
 
-# For debug printing only!
+# Turn of debugging
 # CFLAGS += -DDEBUG
 
 SOURCES = \
@@ -17,6 +17,7 @@ SOURCES = \
 					src/redirect.c \
 					src/shell.c \
 					src/tokenize.c \
+					src/variable.c \
 
 OBJECTS = src/main.o
 OBJECTS += ${SOURCES:.c=.o}
