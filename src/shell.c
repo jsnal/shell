@@ -8,6 +8,8 @@
 #include "shell.h"
 #include "variable.h"
 
+#include "util.h"
+
 char *line;
 
 void cleanup_history()
@@ -101,7 +103,6 @@ char *read_line(void)
 
 int shell(int print_ast, int print_tokens)
 {
-
   dbgln("Starting shell");
 
   int command_ret = 0, readline_status;

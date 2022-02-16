@@ -5,13 +5,11 @@
  */
 
 #include "history.h"
+#include "util.h"
 
 int initialize_history()
 {
-  history = (struct History*) malloc(sizeof(struct History));
-
-  if (history == NULL)
-    return -1;
+  history = (struct History*) xmalloc(sizeof(struct History));
 
   for (unsigned int i = 0; i < HISTORY_SIZE; i++)
     history->list[i] = NULL;
@@ -22,9 +20,7 @@ int initialize_history()
 
 int push_history(char *cmd)
 {
-  char *c = (char*) malloc(strlen(cmd) + 1);
-  if (c == NULL)
-    fprintf(stderr, "error: push_history: malloc failed\n");
+  char *c = (char*) xmalloc(strlen(cmd) + 1);
 
   strcpy(c, cmd);
 

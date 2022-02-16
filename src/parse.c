@@ -5,6 +5,7 @@
  */
 
 #include "parse.h"
+#include "util.h"
 #include "debug.h"
 
 struct Token *consume_token(struct ParseState **ps, struct Token *token)
@@ -51,7 +52,7 @@ struct Token *consume_token(struct ParseState **ps, struct Token *token)
 struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 {
   struct Token *current = ps->tokens_list;
-  struct Redirect *redirect = (struct Redirect*) malloc(sizeof(struct Redirect));
+  struct Redirect *redirect = (struct Redirect*) xmalloc(sizeof(struct Redirect));
 
   while (current != NULL) {
     switch (current->type) {
@@ -117,7 +118,7 @@ struct Command *parse_simple_command(struct ParseState *ps)
     redirects->next = next_redirect;
 
   struct Token *current = ps->tokens_list;
-  struct Command *cmd = calloc(1, sizeof(struct Command));
+  struct Command *cmd = xcalloc(1, sizeof(struct Command));
   size_t argc = 0;
 
   cmd->redirects = redirects;
@@ -158,8 +159,8 @@ struct Command *parse_simple_command(struct ParseState *ps)
 
 struct Pipeline *parse_pipeline(struct ParseState *ps)
 {
-  struct ParseState *pipeline_ps = calloc(1, sizeof(struct ParseState));
-  struct Pipeline *pipeline = calloc(1, sizeof(struct Pipeline));
+  struct ParseState *pipeline_ps = xcalloc(1, sizeof(struct ParseState));
+  struct Pipeline *pipeline = xcalloc(1, sizeof(struct Pipeline));
   int pipe_count = 0;
 
   /* LinkedList iterators */
@@ -222,8 +223,8 @@ struct Pipeline *parse_pipeline(struct ParseState *ps)
 
 struct AndOr *parse_andor(struct ParseState *ps)
 {
-  struct ParseState *andor_ps = calloc(1, sizeof(struct ParseState));
-  struct AndOr *andor = calloc(1, sizeof(struct AndOr));
+  struct ParseState *andor_ps = xcalloc(1, sizeof(struct ParseState));
+  struct AndOr *andor = xcalloc(1, sizeof(struct AndOr));
   struct Token *current_token = ps->tokens_list, *current_subtoken = NULL;
   struct Pipeline *current_pipeline = NULL;
 
@@ -276,7 +277,7 @@ struct AndOr *parse_andor(struct ParseState *ps)
 
 struct Node *parse_to_node(struct ParseState *ps)
 {
-  struct Node *node = (struct Node*) calloc(1, sizeof(struct Node));
+  struct Node *node = (struct Node*) xcalloc(1, sizeof(struct Node));
   node->type = ps->type;
 
   switch (ps->type)
@@ -366,7 +367,7 @@ enum NodeType scan_tokens_for_node_type(struct ParseState *ps)
 
 struct Tree *parse(struct Token *tokens_list)
 {
-  struct Tree *tree = calloc(1, sizeof(struct Tree));
+  struct Tree *tree = xcalloc(1, sizeof(struct Tree));
   struct Node *head_node = NULL, *current = NULL;
   struct ParseState ps = {
     .tokens_list = tokens_list,

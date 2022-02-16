@@ -6,6 +6,7 @@
 
 #include "debug.h"
 #include "hashtable.h"
+#include "util.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,20 +15,11 @@
 
 hashtable_t *hashtable_create()
 {
-  hashtable_t *table = malloc(sizeof(hashtable_t));
-  if (table == NULL) {
-    errln("%s", strerror(errno));
-  }
+  hashtable_t *table = xmalloc(sizeof(hashtable_t));
 
   table->length = 0;
   table->capacity = INITIAL_CAPACITY;
-
-  table->entries = calloc(table->capacity, sizeof(hashtable_entry_t));
-  if (table->entries == NULL) {
-    free(table);
-    errln("%s", strerror(errno));
-    return NULL;
-  }
+  table->entries = xcalloc(table->capacity, sizeof(hashtable_entry_t));
 
   return table;
 }
@@ -88,7 +80,7 @@ static const char *hashtable_put_entry(hashtable_entry_t *entries, int capacity,
   }
 
   if (length != NULL) {
-    key = strdup(key);
+    key = xstrdup(key);
     if (key == NULL) {
       return NULL;
     }
@@ -109,11 +101,7 @@ static bool hashtable_resize(hashtable_t *table)
   }
 
   hashtable_entry_t *new_entries =
-    (hashtable_entry_t*) calloc(new_capacity, sizeof(hashtable_entry_t));
-
-  if (new_entries == NULL) {
-    return false;
-  }
+      (hashtable_entry_t*) xcalloc(new_capacity, sizeof(hashtable_entry_t));
 
   for (int i = 0; i < table->capacity; i++) {
     hashtable_entry_t entry = table->entries[i];

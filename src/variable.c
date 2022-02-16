@@ -5,19 +5,20 @@
  */
 
 #include "hashtable.h"
+#include "util.h"
 #include "variable.h"
+#include "debug.h"
 #include <stdlib.h>
 
 static char *xgetcwd()
 {
   size_t pwd_len = 40;
-  char *pwd = malloc(pwd_len);
+  char *pwd = xmalloc(pwd_len);
 }
 
 variable_scope_t *initialize_main_scope()
 {
-  variable_scope_t *main_scope =
-    (variable_scope_t*) malloc(sizeof(variable_scope_t));
+  variable_scope_t *main_scope = (variable_scope_t*) xmalloc(sizeof(variable_scope_t));
 
   main_scope->parent = NULL;
   main_scope->vars = hashtable_create();

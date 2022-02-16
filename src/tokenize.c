@@ -5,6 +5,7 @@
  */
 
 #include "tokenize.h"
+#include "util.h"
 
 #define RESERVED_SYMBOLS_SIZE 12
 
@@ -139,7 +140,7 @@ int tokenize_text(struct TokenState *ts, size_t index)
   if (single_quote)
     SET_TYPE(TT_TEXT);
   else
-    SET_TYPE(tokenize_reserved_words(strdup(ts->text)));
+    SET_TYPE(tokenize_reserved_words(xstrdup(ts->text)));
 
   return index;
 }
@@ -306,14 +307,14 @@ struct Token *tokenize(char *line)
     // Set the front of the LinkedList
     if (tokens_list == NULL)
     {
-      tokens_list = calloc(1, sizeof(struct Token));
+      tokens_list = xcalloc(1, sizeof(struct Token));
       tokens_list->id = 0;
       tokens_list->type = ts.type;
       tokens_list->prev = NULL;
 
       if (ts.text[0] != '\0')
       {
-        tokens_list->text = strdup(ts.text);
+        tokens_list->text = xstrdup(ts.text);
         memset(ts.text, '\0', TEXT_MAX);
       }
 
@@ -325,14 +326,14 @@ struct Token *tokenize(char *line)
     while (current->next != NULL)
       current = current->next;
 
-    current->next = calloc(1, sizeof(struct Token));
+    current->next = xcalloc(1, sizeof(struct Token));
     current->next->id = current->id + 1;
     current->next->prev = current;
     current->next->type = ts.type;
 
     if (ts.text[0] != '\0')
     {
-      current->next->text = strdup(ts.text);
+      current->next->text = xstrdup(ts.text);
       memset(ts.text, '\0', TEXT_MAX);
     }
   }

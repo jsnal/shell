@@ -5,6 +5,7 @@
  */
 
 #include "execute.h"
+#include "util.h"
 #include "debug.h"
 #include <stdbool.h>
 
@@ -82,7 +83,7 @@ static int execute_pipeline(pipeline_t *pipeline)
 
   pipelinestate_t ps = {
     .command_count = pipeline->pipe_count + 1,
-    .pfds = malloc(sizeof(int[2]) * pipeline->pipe_count)
+    .pfds = xmalloc(sizeof(int[2]) * pipeline->pipe_count)
   };
 
   for (int i = 0; i < pipeline->pipe_count; i++) {

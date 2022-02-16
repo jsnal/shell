@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#include <string.h>
+#include "util.h"
 #include "line.h"
 
 char *unsupported_terminals[] = {"dumb", "emacs", NULL};
@@ -239,18 +241,12 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
 char *handle_unsupported_terminal(const char *prompt)
 {
   int buf_size = 128;
-  char *ret_line = malloc(buf_size * sizeof(char));
+  char *ret_line = xmalloc(buf_size * sizeof(char));
   unsigned int i = 0;
   char c;
 
   printf("%s", prompt);
   fflush(stdout);
-
-  if (ret_line == NULL)
-  {
-    fprintf(stderr, "error: read_command: malloc failed\n");
-    exit(EXIT_FAILURE);
-  }
 
   while ((c = getchar()) != '\n')
   {
@@ -341,6 +337,6 @@ char *readline(const char* prompt, int *status)
   else
   {
     *status = handle_read_raw(buffer, LINE_LENGTH, prompt);
-    return strdup(buffer);
+    return xstrdup(buffer);
   }
 }
