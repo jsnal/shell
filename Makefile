@@ -26,6 +26,9 @@ HEADERS = ${SOURCES:.c=.h}
 $(NAME): $(OBJECTS) $(HEADERS)
 	$(CC) -o $@ $(OBJECTS)
 
+refresh:
+	find . -name -prune -o \( -name '*.c' -or -name '*.h' -or -name 'Makefile' \) | sort > shell.files
+
 .PHONY: clean
 clean:
 	rm -f $(NAME) $(OBJECTS)
