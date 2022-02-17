@@ -1,0 +1,112 @@
+#include "list.h"
+#include "util.h"
+#include <stdbool.h>
+
+#include "debug.h"
+
+list_t *list_create()
+{
+  list_t *list = (list_t*) xmalloc(sizeof(list_t));
+
+  list->size = 0;
+  list->head = (list_entry_t*) xmalloc(sizeof(list_entry_t));
+  list->tail = NULL;
+
+  return list;
+}
+
+static bool out_of_bounds(list_t *list, int index) {
+  return index < 0 || index >= list->size;
+}
+
+void *list_get(list_t *list, int index)
+{
+  if (out_of_bounds(list, index)) {
+    return NULL;
+  }
+
+  list_entry_t *current = list->head->next;
+
+  for (int i = 0; i < index; i++) {
+    current = current->next;
+  }
+
+  return current ? current->value : NULL;
+}
+
+bool list_add(list_t *list, int index, void *value)
+{
+  if (index < 0 || index > list->size) {
+    return false;
+  }
+
+  list_entry_t *new_entry = (list_entry_t*) malloc(sizeof(list_entry_t));
+  new_entry->value = value;
+
+  if (index == 0) {
+    new_entry->next = list->head->next;
+    list->head->next = new_entry;
+
+    if (list->size == 0) {
+      list->tail = list->head->next;
+    }
+  } else if (index == list->size) {
+    list->tail->next = new_entry;
+    list->tail = list->tail->next;
+  } else {
+    list_entry_t *current = list->head->next;
+
+    for (int i = 0; i < index - 1; i++) {
+      current = current->next;
+    }
+
+    new_entry->next = current->next;
+    current->next = new_entry;
+  }
+
+  list->size++;
+  return true;
+}
+
+bool list_add_next(list_t *list, void *value)
+{
+  return list_add(list, list->size, value);
+}
+
+void *list_set(list_t *list, int index, void *value)
+{
+  if (out_of_bounds(list, index)) {
+    return NULL;
+  }
+
+  list_entry_t *current = list->head;
+
+  for (int i = 0; i < index; i++) {
+    current = current->next;
+  }
+
+  void *old_value = NULL;
+  if (current != NULL) {
+    old_value = current->value;
+    current->value = value;
+  }
+
+  return old_value;
+}
+
+void *list_remove(list_t *list, int index)
+{
+  if (out_of_bounds(list, index)) {
+    return NULL;
+  }
+
+  if (index == 0) {
+
+  } else if (index == list->size - 1) {
+
+  } else {
+
+  }
+
+  list->size--;
+}
