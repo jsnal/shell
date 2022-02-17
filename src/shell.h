@@ -8,7 +8,6 @@
 #define SHELL_H
 
 #include "execute.h"
-#include "history.h"
 #include "line.h"
 #include "parse.h"
 #include "tokenize.h"

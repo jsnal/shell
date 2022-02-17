@@ -1,7 +1,7 @@
-CC = gcc
+CC = clang
 
 NAME = shell
-CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon -std=c17
+CFLAGS = -Wall -O2 -g -Werror=format-security -fcommon
 
 # Turn of debugging
 # CFLAGS += -DDEBUG
@@ -11,7 +11,6 @@ SOURCES = \
 					src/debug.c \
 					src/execute.c \
 					src/hashtable.c \
-					src/history.c \
 					src/line.c \
 					src/parse.c \
 					src/redirect.c \

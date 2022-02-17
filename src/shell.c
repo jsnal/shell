@@ -12,23 +12,8 @@
 
 char *line;
 
-void cleanup_history()
-{
-  for (unsigned int i = 0; history->list[i] != NULL; i++)
-    free(history->list[i]);
-  free(history);
-}
-
-void clean()
-{
-  if (history) {
-    cleanup_history();
-  }
-}
-
 void exit_clean(int code)
 {
-  clean();
   exit(code);
 }
 
@@ -108,9 +93,6 @@ int shell(int print_ast, int print_tokens)
   int command_ret = 0, readline_status;
   char prompt[64];
   char *history_line;
-
-  if (initialize_history() == -1)
-    fprintf(stderr, "error: history: unable to initialize history\n");
 
   variable_scope_t *main_scope;
   if ((main_scope = initialize_main_scope()) == NULL) {
