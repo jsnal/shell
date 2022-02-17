@@ -52,7 +52,7 @@ struct Token *consume_token(struct ParseState **ps, struct Token *token)
 struct Redirect *scan_tokens_for_redirect(struct ParseState *ps)
 {
   struct Token *current = ps->tokens_list;
-  struct Redirect *redirect = (struct Redirect*) xmalloc(sizeof(struct Redirect));
+  struct Redirect *redirect = (struct Redirect*) xcalloc(1, sizeof(struct Redirect));
 
   while (current != NULL) {
     switch (current->type) {
@@ -114,8 +114,10 @@ found_redirect:
 struct Command *parse_simple_command(struct ParseState *ps)
 {
   struct Redirect *redirects = scan_tokens_for_redirect(ps), *next_redirect;
-  while (redirects != NULL && (next_redirect = scan_tokens_for_redirect(ps)) != NULL)
+  while (redirects != NULL && (next_redirect = scan_tokens_for_redirect(ps)) != NULL) {
+    dbgln("finding redirects");
     redirects->next = next_redirect;
+  }
 
   struct Token *current = ps->tokens_list;
   struct Command *cmd = xcalloc(1, sizeof(struct Command));

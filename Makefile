@@ -1,7 +1,7 @@
 CC = gcc
 
 NAME = shell
-CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon
+CFLAGS = -Wall -O2 -Werror=format-security -ggdb3 -fcommon -std=c17
 
 # Turn of debugging
 # CFLAGS += -DDEBUG
@@ -17,11 +17,14 @@ SOURCES = \
 					src/redirect.c \
 					src/shell.c \
 					src/tokenize.c \
+					src/util.c \
 					src/variable.c \
 
 OBJECTS = src/main.o
 OBJECTS += ${SOURCES:.c=.o}
 HEADERS = ${SOURCES:.c=.h}
+
+all: $(NAME)
 
 $(NAME): $(OBJECTS) $(HEADERS)
 	$(CC) -o $@ $(OBJECTS)
