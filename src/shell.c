@@ -8,6 +8,7 @@
 #include "shell.h"
 #include "variable.h"
 
+#include "list.h"
 #include "util.h"
 
 char *line;

@@ -1,4 +1,4 @@
-CC = clang
+CC = gcc
 
 NAME = shell
 CFLAGS = -Wall -O2 -g -Werror=format-security -fcommon
@@ -11,6 +11,7 @@ SOURCES = \
 					src/debug.c \
 					src/execute.c \
 					src/hashtable.c \
+					src/list.c \
 					src/line.c \
 					src/parse.c \
 					src/redirect.c \

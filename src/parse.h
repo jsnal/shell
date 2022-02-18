@@ -8,6 +8,7 @@
 #define PARSE_H
 
 #include "tokenize.h"
+#include "list.h"
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -18,8 +19,7 @@
 #define ARG_MAX 512
 
 #define TODO \
-  warnln("Node type not implemented yet"); \
-  return NULL
+  warnln("Node type not implemented yet")
 
 enum RedirectType {
   RT_INPUT,    /* <file */
@@ -36,11 +36,11 @@ enum RedirectType {
   RT_PROCOUT,  /* >(command) */
 };
 
-struct Redirect {
+typedef struct RedirectStruct {
   struct Redirect *next;
   enum RedirectType type;
   char *file;
-};
+} redirect_t;
 
 enum TerminatorType {
   MT_BACKGROUND,
@@ -54,26 +54,26 @@ enum AndOrType {
   AOT_NONE,
 };
 
-typedef struct Command {
-  struct Command *next;
+typedef struct CommandStruct {
+  struct CommandStruct *next;
   size_t argc;
   char *argv[ARG_MAX];
   int fds[2];
   pid_t pid;
   enum TerminatorType terminator;
-  struct Redirect *redirects;
+  list_t *redirects;
 } command_t;
 
-typedef struct Pipeline {
-  struct Pipeline *next;
-  struct Command *commands;
+typedef struct PipelineStruct {
+  struct PipelineStruct *next;
+  struct CommandStruct *commands;
   enum AndOrType type;
   int pipe_count;
 } pipeline_t;
 
-typedef struct AndOr {
-  struct AndOr *next;
-  struct Pipeline *pipelines;
+typedef struct AndOrStruct {
+  struct AndOrStruct *next;
+  struct PipelineStruct *pipelines;
 } andor_t;
 
 enum NodeType {
@@ -91,9 +91,9 @@ struct Node {
   struct Node *next;
   enum NodeType type;
   union {
-    struct Command *command;
-    struct Pipeline *pipeline;
-    struct AndOr *andor;
+    command_t *command;
+    pipeline_t *pipeline;
+    andor_t *andor;
   };
 };
 
@@ -101,16 +101,16 @@ struct Tree {
   struct Node *nodes;
 };
 
-struct ParseState {
+typedef struct ParseStateStruct {
   struct Token *tokens_list;
   enum NodeType type;
   size_t index;
-};
+} parse_state_t;
 
 struct Tree *parse(struct Token*);
 void tree_to_string(struct Tree*);
 char *terminator_to_string(enum TerminatorType);
-void command_to_string(struct Command*, int space);
-void pipeline_to_string(struct Pipeline*, int space);
-void andor_to_string(struct AndOr*);
+void command_to_string(command_t*, int space);
+void pipeline_to_string(pipeline_t*, int space);
+void andor_to_string(andor_t*);
 #endif
