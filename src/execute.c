@@ -40,7 +40,7 @@ static int execute_simple_command(command_t *command, pipelinestate_t *ps)
     }
 
     redirect_t *redirect;
-    for (int i = 0; i < command->redirects->size; i++) {
+    for (int i = 0; i < list_size(command->redirects); i++) {
       redirect = (redirect_t*) list_get(command->redirects, i);
 
       switch (redirect->type) {

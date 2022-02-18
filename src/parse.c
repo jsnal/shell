@@ -453,7 +453,7 @@ void command_to_string(command_t *cmd, int space)
     printf("(NULL)");
 
   redirect_t *r;
-  for (int i = 0; i < cmd->redirects->size; i++) {
+  for (int i = 0; i < list_size(cmd->redirects); i++) {
     r = (redirect_t*) list_get(cmd->redirects, i);
     printf("[%d:%s]", r->type, r->file);
   }

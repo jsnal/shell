@@ -29,5 +29,6 @@ bool list_add_next(list_t *list, void *value);
 void *list_set(list_t *list, int index, void *value);
 void *list_remove(list_t *list, int index);
 void list_destroy(list_t *list);
+size_t list_size(list_t *list);
 
 #endif

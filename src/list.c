@@ -152,3 +152,12 @@ void *list_remove(list_t *list, int index)
   free(old);
   return value;
 }
+
+size_t list_size(list_t *list)
+{
+  if (list == NULL) {
+    return -1;
+  }
+
+  return list->size;
+}
