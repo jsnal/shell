@@ -21,7 +21,7 @@
 #define TODO \
   warnln("Node type not implemented yet")
 
-enum RedirectType {
+typedef enum RedirectTypeEnum {
   RT_INPUT,    /* <file */
   RT_OUTPUT,   /* >file */
   RT_ERROR,    /* 2>file */
@@ -34,25 +34,25 @@ enum RedirectType {
   RT_HERE,     /* <<END */
   RT_PROCIN,   /* <(command) */
   RT_PROCOUT,  /* >(command) */
-};
+} redirect_type_e;
 
 typedef struct RedirectStruct {
-  struct Redirect *next;
-  enum RedirectType type;
+  struct RedirectStruct *next;
+  redirect_type_e type;
   char *file;
 } redirect_t;
 
-enum TerminatorType {
+typedef enum TerminatorTypeEnum {
   MT_BACKGROUND,
   MT_NONE,
   MT_SEQUENCE,
-};
+} terminator_type_e;
 
-enum AndOrType {
+typedef enum AndOrTypeEnum {
   AOT_AND,
   AOT_OR,
   AOT_NONE,
-};
+} andor_type_e;
 
 typedef struct CommandStruct {
   struct CommandStruct *next;
@@ -60,23 +60,23 @@ typedef struct CommandStruct {
   char *argv[ARG_MAX];
   int fds[2];
   pid_t pid;
-  enum TerminatorType terminator;
+  terminator_type_e terminator;
   list_t *redirects;
 } command_t;
 
 typedef struct PipelineStruct {
   struct PipelineStruct *next;
-  struct CommandStruct *commands;
-  enum AndOrType type;
+  command_t *commands;
+  andor_type_e type;
   int pipe_count;
 } pipeline_t;
 
 typedef struct AndOrStruct {
   struct AndOrStruct *next;
-  struct PipelineStruct *pipelines;
+  pipeline_t *pipelines;
 } andor_t;
 
-enum NodeType {
+typedef enum NodeTypeEnum {
   NT_ANDOR,
   NT_CASE,
   NT_ERROR,
@@ -85,31 +85,31 @@ enum NodeType {
   NT_PIPELINE,
   NT_SIMPLE_COMMAND,
   NT_WHILE,
-};
+} node_type_e;
 
-struct Node {
-  struct Node *next;
-  enum NodeType type;
+typedef struct NodeStruct {
+  struct NodeStruct *next;
+  node_type_e type;
   union {
     command_t *command;
     pipeline_t *pipeline;
     andor_t *andor;
   };
-};
+} node_t;
 
-struct Tree {
-  struct Node *nodes;
-};
+typedef struct TreeStruct {
+  node_t *nodes;
+} tree_t;
 
 typedef struct ParseStateStruct {
   struct Token *tokens_list;
-  enum NodeType type;
+  node_type_e type;
   size_t index;
 } parse_state_t;
 
-struct Tree *parse(struct Token*);
-void tree_to_string(struct Tree*);
-char *terminator_to_string(enum TerminatorType);
+tree_t *parse(struct Token*);
+void tree_to_string(tree_t*);
+char *terminator_to_string(terminator_type_e);
 void command_to_string(command_t*, int space);
 void pipeline_to_string(pipeline_t*, int space);
 void andor_to_string(andor_t*);

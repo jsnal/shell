@@ -52,7 +52,7 @@ struct Token *consume_token(parse_state_t **ps, struct Token *token)
 
 static redirect_t *parse_redirect(parse_state_t *ps,
                                   struct Token *r,
-                                  enum RedirectType type,
+                                  redirect_type_e type,
                                   int *status)
 {
   if (r->next == NULL || r->next->type != TT_TEXT) {
@@ -289,9 +289,9 @@ andor_t *parse_andor(parse_state_t *ps)
   return andor;
 }
 
-struct Node *parse_to_node(parse_state_t *ps)
+node_t *parse_to_node(parse_state_t *ps)
 {
-  struct Node *node = (struct Node*) xcalloc(1, sizeof(struct Node));
+  node_t *node = (node_t*) xcalloc(1, sizeof(node_t));
   node->type = ps->type;
 
   switch (ps->type)
@@ -354,7 +354,7 @@ int scan_tokens_for_pipeline(parse_state_t *ps)
   return 0;
 }
 
-enum NodeType scan_tokens_for_node_type(parse_state_t *ps)
+node_type_e scan_tokens_for_node_type(parse_state_t *ps)
 {
   switch (ps->tokens_list->type) {
     case TT_IF:
@@ -379,10 +379,10 @@ enum NodeType scan_tokens_for_node_type(parse_state_t *ps)
   }
 }
 
-struct Tree *parse(struct Token *tokens_list)
+tree_t *parse(struct Token *tokens_list)
 {
-  struct Tree *tree = xcalloc(1, sizeof(struct Tree));
-  struct Node *head_node = NULL, *current = NULL;
+  tree_t *tree = xcalloc(1, sizeof(tree_t));
+  node_t *head_node = NULL, *current = NULL;
   parse_state_t ps = {
     .tokens_list = tokens_list,
     .type = NT_ERROR,
@@ -409,7 +409,7 @@ struct Tree *parse(struct Token *tokens_list)
 
 /* To String Functions */
 
-char *terminator_to_string(enum TerminatorType tt)
+char *terminator_to_string(terminator_type_e tt)
 {
   switch (tt)
   {
@@ -423,7 +423,7 @@ char *terminator_to_string(enum TerminatorType tt)
   return "unknown value";
 }
 
-char *andor_type_to_string(enum AndOrType aot)
+char *andor_type_to_string(andor_type_e aot)
 {
   switch (aot)
   {
@@ -452,10 +452,10 @@ void command_to_string(command_t *cmd, int space)
   if (cmd->redirects == NULL)
     printf("(NULL)");
 
-  list_entry_t *r = cmd->redirects->head->next;
+  redirect_t *r;
   for (int i = 0; i < cmd->redirects->size; i++) {
-    printf("[%d:%s]", ((redirect_t*) r->value)->type, ((redirect_t*) r->value)->file);
-    r = r->next;
+    r = (redirect_t*) list_get(cmd->redirects, i);
+    printf("[%d:%s]", r->type, r->file);
   }
   printf("\n");
   printf("%*sterminator: %s\n", space + 1, "", terminator_to_string(cmd->terminator));
@@ -487,7 +487,7 @@ void andor_to_string(andor_t *andor)
   }
 }
 
-void tree_to_string(struct Tree *tree)
+void tree_to_string(tree_t *tree)
 {
   if (tree == NULL)
   {
@@ -503,7 +503,7 @@ void tree_to_string(struct Tree *tree)
   }
   printf(" Nodes\n");
 
-  struct Node *current = tree->nodes;
+  node_t *current = tree->nodes;
   while (current != NULL)
   {
     if (current->command == NULL)

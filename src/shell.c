@@ -114,7 +114,7 @@ int shell(int print_ast, int print_tokens)
       if (print_tokens)
         tokens_to_string(tokens_list);
 
-      struct Tree *tree = parse(tokens_list);
+      tree_t *tree = parse(tokens_list);
       if (print_ast)
         tree_to_string(tree);
 

@@ -9,7 +9,7 @@
 #include "history.h"
 #include "shell.h"
 
-static int handle_cd(struct Command *command)
+static int handle_cd(command_t *command)
 {
   unsigned int cd_ret = 0;
   char *cwd;
@@ -46,13 +46,13 @@ static int handle_cd(struct Command *command)
   return 0;
 }
 
-static int handle_exit(struct Command *command)
+static int handle_exit(command_t *command)
 {
   printf("Goodbye!\n");
   return EXIT_SUCCESS;
 }
 
-static int handle_history(struct Command *command)
+static int handle_history(command_t *command)
 {
   for (unsigned int i = 0; history->list[i] != NULL; i++) {
     printf(" %d  %s\n", i + 1, history->list[i]);
@@ -68,12 +68,12 @@ static builtin_t builtin[] = {
   { "history", handle_history }
 };
 
-int exec_builtin(builtin_t *builtin, struct Command *command)
+int exec_builtin(builtin_t *builtin, command_t *command)
 {
   return (builtin->func)(command);
 }
 
-builtin_t *check_builtin(struct Command *command)
+builtin_t *check_builtin(command_t *command)
 {
   builtin_t *front = builtin;
   builtin_t *back = builtin + sizeof(builtin) / sizeof(builtin[0]);

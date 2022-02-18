@@ -11,10 +11,10 @@
 
 typedef struct Builtin {
   char *name;
-  int (*func)(struct Command *command);
+  int (*func)(command_t *command);
 } builtin_t;
 
-builtin_t *check_builtin(struct Command *command);
-int exec_builtin(builtin_t *builtin, struct Command *command);
+builtin_t *check_builtin(command_t *command);
+int exec_builtin(builtin_t *builtin, command_t *command);
 
 #endif

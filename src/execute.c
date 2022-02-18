@@ -39,28 +39,29 @@ static int execute_simple_command(command_t *command, pipelinestate_t *ps)
       close_pipes(ps);
     }
 
-    struct Redirect *current = command->redirects;
-    while (current != NULL) {
-      switch (current->type) {
+    redirect_t *redirect;
+    for (int i = 0; i < command->redirects->size; i++) {
+      redirect = (redirect_t*) list_get(command->redirects, i);
+
+      switch (redirect->type) {
         case RT_INPUT:
-          handle_redirect_in(current->file);
+          handle_redirect_in(redirect->file);
           break;
         case RT_OUTPUT:
-          handle_redirect_out(current->file, 0);
+          handle_redirect_out(redirect->file, 0);
           break;
         case RT_ERROR:
-          handle_redirect_error(current->file, 0);
+          handle_redirect_error(redirect->file, 0);
           break;
         case RT_ALL:
-          handle_redirect_all(current->file);
+          handle_redirect_all(redirect->file);
           break;
         case RT_APPEND:
-          handle_redirect_out(current->file, 1);
+          handle_redirect_out(redirect->file, 1);
           break;
         default:
           break;
       }
-      current = current->next;
     }
 
     execvp(command->argv[0], command->argv);
@@ -147,9 +148,9 @@ static int execute_andor(andor_t *andor)
   return ret;
 }
 
-int execute(struct Tree *tree)
+int execute(tree_t *tree)
 {
-  struct Node *current = tree->nodes;
+  node_t *current = tree->nodes;
   builtin_t *builtin;
 
   while (current != NULL) {

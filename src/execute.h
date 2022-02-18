@@ -13,9 +13,9 @@
 #include <dirent.h>
 #include <sys/wait.h>
 
-int execute(struct Tree*);
+int execute(tree_t*);
 
-typedef struct PipelineState {
+typedef struct PipelineStateStruct {
   int command_count;
   int (*pfds)[2];
 } pipelinestate_t;
