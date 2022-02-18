@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021-2022, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #ifndef LIST_H
 #define LIST_H
 
@@ -22,5 +28,6 @@ bool list_add(list_t *list, int index, void *value);
 bool list_add_next(list_t *list, void *value);
 void *list_set(list_t *list, int index, void *value);
 void *list_remove(list_t *list, int index);
+void list_destroy(list_t *list);
 
 #endif

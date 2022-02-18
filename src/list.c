@@ -1,8 +1,17 @@
+/*
+ * Copyright (c) 2021-2022, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "list.h"
 #include "util.h"
 #include <stdbool.h>
 
-#include "debug.h"
+static bool out_of_bounds(list_t *list, int index)
+{
+  return index < 0 || index >= list->size;
+}
 
 list_t *list_create()
 {
@@ -15,8 +24,21 @@ list_t *list_create()
   return list;
 }
 
-static bool out_of_bounds(list_t *list, int index) {
-  return index < 0 || index >= list->size;
+void list_destroy(list_t *list)
+{
+  list_entry_t *freeable, *current = list->head->next;
+  for (int i = 0; i < list->size; i++) {
+    freeable = current;
+    current = current->next;
+
+    if (freeable->value != NULL) {
+      free(freeable->value);
+    }
+    free(freeable);
+  }
+
+  free(list->head);
+  free(list);
 }
 
 void *list_get(list_t *list, int index)
@@ -40,7 +62,7 @@ bool list_add(list_t *list, int index, void *value)
     return false;
   }
 
-  list_entry_t *new_entry = (list_entry_t*) malloc(sizeof(list_entry_t));
+  list_entry_t *new_entry = (list_entry_t*) xmalloc(sizeof(list_entry_t));
   new_entry->value = value;
 
   if (index == 0) {
@@ -81,7 +103,7 @@ void *list_set(list_t *list, int index, void *value)
 
   list_entry_t *current = list->head;
 
-  for (int i = 0; i < index; i++) {
+  for (int i = 0; i <= index; i++) {
     current = current->next;
   }
 
@@ -100,13 +122,33 @@ void *list_remove(list_t *list, int index)
     return NULL;
   }
 
+  list_entry_t *old = NULL;
+
   if (index == 0) {
-
+    old = list->head->next;
+    list->head->next = list->head->next->next;
   } else if (index == list->size - 1) {
+    list_entry_t *current = list->head->next;
 
+    for (int i = 0; i < list->size - 2; i++) {
+      current = current->next;
+    }
+
+    old = list->tail;
+    list->tail = current;
   } else {
+    list_entry_t *current = list->head->next;
 
+    for (int i = 0; i < index - 1; i++) {
+      current = current->next;
+    }
+
+    old = current->next;
+    current->next = current->next->next;
   }
 
   list->size--;
+  void *value = old->value;
+  free(old);
+  return value;
 }
