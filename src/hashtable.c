@@ -27,11 +27,13 @@ hashtable_t *hashtable_create()
 void hashtable_destroy(hashtable_t *table)
 {
   for (int i = 0; i < table->capacity; i++) {
-    xfree((void*) table->entries[i].key);
+    if (table->entries[i].key != NULL) {
+      free((void*) table->entries[i].key);
+    }
   }
 
-  xfree(table->entries);
-  xfree(table);
+  free(table->entries);
+  free(table);
 }
 
 static uint64_t hash_key(const char *key)
@@ -110,7 +112,7 @@ static bool hashtable_resize(hashtable_t *table)
     }
   }
 
-  xfree(table->entries);
+  free(table->entries);
   table->entries = new_entries;
   table->capacity = new_capacity;
   return true;

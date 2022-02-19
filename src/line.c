@@ -96,7 +96,7 @@ int refresh(struct LineState *state)
   if (write(state->fd_out, append_buffer.buffer, append_buffer.length) == -1)
     return -1;
 
-  xfree(append_buffer.buffer);
+  free(append_buffer.buffer);
   return 0;
 }
 
@@ -252,7 +252,7 @@ char *handle_unsupported_terminal(const char *prompt)
   {
     if (c == EOF)
     {
-      xfree(ret_line);
+      free(ret_line);
       exit(EXIT_SUCCESS);
     }
 

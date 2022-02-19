@@ -26,7 +26,7 @@ int push_history(char *cmd)
 
   if (history->top >= HISTORY_SIZE)
   {
-    xfree(history->list[0]);
+    free(history->list[0]);
     for (unsigned int i = 0; history->list[i] != NULL; i++)
       history->list[i] = history->list[i + 1];
 

@@ -38,5 +38,5 @@ variable_scope_t *initialize_main_scope()
 void destroy_scope(variable_scope_t *scope)
 {
   hashtable_destroy(scope->vars);
-  xfree(scope);
+  free(scope);
 }
