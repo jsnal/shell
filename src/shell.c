@@ -89,6 +89,10 @@ char *read_line(void)
 
 int shell(int print_ast, int print_tokens)
 {
+  list_t *t = list_create();
+  list_add_next(t, NULL);
+  list_destroy(t);
+  return 0;
   dbgln("Starting shell");
 
   int command_ret = 0, readline_status;

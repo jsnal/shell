@@ -23,9 +23,9 @@ void cleanup_token_list(struct Token *tokens_list)
     tokens_list = tokens_list->next;
 
     if (head->text)
-      free(head->text);
+      xfree(head->text);
 
-    free(head);
+    xfree(head);
   }
   tokens_list = NULL;
 }
@@ -99,7 +99,7 @@ enum TokenType tokenize_reserved_words(char *t)
       break;
   }
 
-  free(t);
+  xfree(t);
   return ret;
 }
 

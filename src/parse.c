@@ -149,7 +149,7 @@ command_t *parse_simple_command(parse_state_t *ps)
         cmd->argv[argc++] = current->text;
         struct Token *consumed_token = consume_token(&ps, current);
         current = current->next;
-        free(consumed_token);
+        xfree(consumed_token);
         break;
       case TT_AMP:
         consume_token(&ps, current);
@@ -187,7 +187,7 @@ pipeline_t *parse_pipeline(parse_state_t *ps)
     {
       struct Token *consumed_token = consume_token(&ps, current_token);
       current_token = current_token->next;
-      free(consumed_token);
+      xfree(consumed_token);
 
       if (current_command == NULL)
         pipeline->commands = current_command = parse_simple_command(pipeline_ps);
@@ -228,7 +228,7 @@ pipeline_t *parse_pipeline(parse_state_t *ps)
   else
     current_command->next = parse_simple_command(pipeline_ps);
 
-  free(pipeline_ps);
+  xfree(pipeline_ps);
 
   pipeline->type = AOT_NONE;
   pipeline->pipe_count = pipe_count;
@@ -261,7 +261,7 @@ andor_t *parse_andor(parse_state_t *ps)
       else
         current_pipeline->type = AOT_OR;
 
-      free(consumed_token);
+      xfree(consumed_token);
       continue;
     }
 
@@ -285,7 +285,7 @@ andor_t *parse_andor(parse_state_t *ps)
   }
 
   current_pipeline->next = parse_pipeline(andor_ps);
-  free(andor_ps);
+  xfree(andor_ps);
   return andor;
 }
 
@@ -317,7 +317,7 @@ node_t *parse_to_node(parse_state_t *ps)
       TODO;
     default:
       fprintf(stderr, "error: parse_to_node: unknown node type\n");
-      free(node);
+      xfree(node);
       return NULL;
   }
 

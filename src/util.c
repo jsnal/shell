@@ -54,3 +54,10 @@ char *xstrdup(const char *s)
 
   return str;
 }
+
+void xfree(void *ptr)
+{
+  if (ptr) {
+    free(ptr);
+  }
+}

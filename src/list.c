@@ -31,14 +31,12 @@ void list_destroy(list_t *list)
     freeable = current;
     current = current->next;
 
-    if (freeable->value != NULL) {
-      free(freeable->value);
-    }
-    free(freeable);
+    xfree(freeable->value);
+    xfree(freeable);
   }
 
-  free(list->head);
-  free(list);
+  xfree(list->head);
+  xfree(list);
 }
 
 void *list_get(list_t *list, int index)
@@ -149,7 +147,7 @@ void *list_remove(list_t *list, int index)
 
   list->size--;
   void *value = old->value;
-  free(old);
+  xfree(old);
   return value;
 }
 
