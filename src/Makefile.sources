@@ -1,0 +1,16 @@
+SOURCES = \
+					src/builtin.c \
+					src/debug.c \
+					src/execute.c \
+					src/hashtable.c \
+					src/list.c \
+					src/line.c \
+					src/parse.c \
+					src/redirect.c \
+					src/shell.c \
+					src/tokenize.c \
+					src/util.c \
+					src/variable.c \
+
+OBJECTS = ${SOURCES:.c=.o}
+HEADERS = ${SOURCES:.c=.h}

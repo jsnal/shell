@@ -1,19 +1,17 @@
 CC = gcc
-CFLAGS = -Wall -O2 -g -Werror=format-security -fcommon
+CFLAGS = -Wall -g
 
-SOURCES = \
-					../src/list.c \
-					../src/util.c \
-					../src/debug.c \
-					../src/hashtable.c \
-					./asserts.c \
+include ../src/Makefile.sources
 
-COMMON_OBJECTS = ${SOURCES:.c=.o}
+COMMON_SOURCES = $(addprefix ../, $(SOURCES))
+COMMON_SOURCES += asserts.c
+
+COMMON_OBJECTS = ${COMMON_SOURCES:.c=.o}
 TESTS = test_list test_hashtable
 
 all: $(TESTS)
 
-$(TESTS): $(SOURCES)
+$(TESTS): $(COMMON_OBJECTS)
 
 .PHONY: clean
 clean:
