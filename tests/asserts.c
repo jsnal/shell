@@ -1,4 +1,4 @@
-#include "tester_asserts.h"
+#include "asserts.h"
 #include <stdarg.h>
 #include <stdio.h>
 

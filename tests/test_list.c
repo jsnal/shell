@@ -1,6 +1,5 @@
 #include "tester.h"
-#include <list.h>
-
+#include "../src/list.h"
 #include <stdlib.h>
 
 
@@ -17,8 +16,11 @@ TEST_CASE(add)
 
   list_destroy(list);
 }
+TEST_CASE_END();
 
-
-TEST_MAIN(list) {
-  add();
+TEST_MAIN("test_list")
+{
+  TEST_START();
+  TEST_RUN(add);
+  TEST_END();
 }

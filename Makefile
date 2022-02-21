@@ -20,14 +20,14 @@ SOURCES = \
 					src/util.c \
 					src/variable.c \
 
-OBJECTS = src/main.o
-OBJECTS += ${SOURCES:.c=.o}
+# OBJECTS = src/main.o
+OBJECTS = ${SOURCES:.c=.o}
 HEADERS = ${SOURCES:.c=.h}
 
 all: $(NAME)
 
-$(NAME): $(OBJECTS) $(HEADERS)
-	$(CC) -o $@ $(OBJECTS)
+$(NAME): src/main.o $(OBJECTS) $(HEADERS)
+	$(CC) -o $@ src/main.o $(OBJECTS)
 
 refresh:
 	find . -name -prune -o \( -name '*.c' -or -name '*.h' -or -name 'Makefile' \) | sort > shell.files

@@ -1,27 +1,20 @@
 CC = gcc
-
-NAME = test_shell
-CFLAGS = -Wall -O2 -g -Werror=format-security -fcommon -I../src
-
-# Turn of debugging
-# CFLAGS += -DDEBUG
+CFLAGS = -Wall -O2 -g -Werror=format-security -fcommon
 
 SOURCES = \
 					../src/list.c \
 					../src/util.c \
 					../src/debug.c \
-					./tester.c \
-					./test_list.c \
-					./tester_asserts.c \
+					../src/hashtable.c \
+					./asserts.c \
 
-OBJECTS = ${SOURCES:.c=.o}
-# HEADERS = ${SOURCES:.c=.h}
+COMMON_OBJECTS = ${SOURCES:.c=.o}
+TESTS = test_list test_hashtable
 
-all: $(NAME)
+all: $(TESTS)
 
-$(NAME): $(OBJECTS) $(HEADERS)
-	$(CC) -o $@ $(OBJECTS)
+$(TESTS): $(SOURCES)
 
 .PHONY: clean
 clean:
-	rm -f $(NAME) $(OBJECTS)
+	rm -f $(TESTS) $(COMMON_OBJECTS)
