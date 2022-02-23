@@ -4,7 +4,6 @@ CFLAGS = -Wall -g
 include ../src/Makefile.sources
 
 COMMON_SOURCES = $(addprefix ../, $(SOURCES))
-COMMON_SOURCES += asserts.c
 
 COMMON_OBJECTS = ${COMMON_SOURCES:.c=.o}
 TESTS = test_list test_hashtable
