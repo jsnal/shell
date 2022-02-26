@@ -118,7 +118,7 @@ static bool parse_redirects(parse_state_t *ps, list_t *redirects)
         return false;
       }
 
-      list_add_next(redirects, redirect);
+      list_append(redirects, redirect);
     }
     current = current->next;
   }

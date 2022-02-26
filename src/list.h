@@ -25,7 +25,7 @@ typedef struct ListStruct {
 list_t *list_create();
 void *list_get(list_t *list, int index);
 bool list_add(list_t *list, int index, void *value);
-bool list_add_next(list_t *list, void *value);
+bool list_append(list_t *list, void *value);
 void *list_set(list_t *list, int index, void *value);
 void *list_remove(list_t *list, int index);
 void list_destroy(list_t *list);

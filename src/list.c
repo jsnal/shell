@@ -90,7 +90,7 @@ bool list_add(list_t *list, int index, void *value)
   return true;
 }
 
-bool list_add_next(list_t *list, void *value)
+bool list_append(list_t *list, void *value)
 {
   return list_add(list, list->size, value);
 }
