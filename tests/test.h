@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #define TEST_CASE(name) \
-  static int name() { \
+  static int test_##name() { \
     int failed = 0; \
 
 #define TEST_CASE_END() \
@@ -25,6 +25,6 @@
 
 #define TEST_RUN(name) \
   total++; \
-  failed += name()
+  failed += test_##name()
 
 #endif

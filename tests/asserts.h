@@ -35,6 +35,21 @@ static int fail(const char *file, const int line, const char *fmt, ...)
     FAIL("ASSERT_EQ_STR(\"%s\", \"%s\") expected = \"%s\", found = \"%s\"", a, b, a, b); \
   }
 
+#define ASSERT_TRUE(a) \
+  if (!a) { \
+    FAIL("ASSERT_TRUE(a) found = false", ""); \
+  }
+
+#define ASSERT_FALSE(a) \
+  if (a) { \
+    FAIL("ASSERT_TRUE(a) found = true", ""); \
+  }
+
+#define ASSERT_NULL(a)                 \
+  if (a) {                                \
+    FAIL("ASSERT_NULL(a) failed", ""); \
+  }
+
 #define ASSERT_NOT_NULL(a)                 \
   if (!a) {                                \
     FAIL("ASSERT_NOT_NULL(a) failed", ""); \
