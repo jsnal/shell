@@ -3,6 +3,7 @@
 #include "errno.h"
 #include <signal.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 static void fatal_sig_handler(int sig)
@@ -53,4 +54,18 @@ char *xstrdup(const char *s)
   }
 
   return str;
+}
+
+bool resize_buffer_append(resize_buffer_t *b, const char *str, size_t length)
+{
+  char *new = realloc(b->buffer, b->length + length);
+
+  if (new == NULL) {
+    return false;
+  }
+
+  memcpy(new + b->length, str, length);
+  b->buffer = new;
+  b->length += length;
+  return true;
 }

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#ifndef LINE_H
+#define LINE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -13,8 +16,7 @@
 #define LINE_LENGTH 4096
 
 #define PERFORM_EDIT(edit) \
-  if (edit(&state) == -1) \
-    return -1
+  if (!edit(&state)) return false
 
 enum KeyAction {
   KEY_NULL = 0,
@@ -29,12 +31,7 @@ enum KeyAction {
   ENTER = 13,
 };
 
-struct AppendBuffer {
-  char *buffer;
-  size_t length;
-};
-
-struct LineState {
+typedef struct LineStateStruct {
   int fd_in;
   int fd_out;
   char *buffer;
@@ -44,6 +41,8 @@ struct LineState {
   size_t cursor_position;
   size_t line_length;
   size_t columns;
-};
+} line_state_t;
 
 char *readline(const char*, int*);
+
+#endif
