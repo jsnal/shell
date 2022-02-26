@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "debug.h"
 #include "util.h"
 #include "line.h"
 
@@ -143,22 +144,22 @@ int edit_backspace(struct LineState *state)
 
 int edit_move_left(struct LineState *state)
 {
-  if (state->line_length > 0)
-  {
+  if (state->line_length > 0 && state->cursor_position > 0) {
     state->cursor_position--;
-    if (refresh(state) == -1)
+    if (refresh(state) == -1) {
       return -1;
+    }
   }
   return 0;
 }
 
 int edit_move_right(struct LineState *state)
 {
-  if (state->line_length > 0)
-  {
+  if (state->line_length > 0 && state->cursor_position != state->line_length) {
     state->cursor_position++;
-    if (refresh(state) == -1)
+    if (refresh(state) == -1) {
       return -1;
+    }
   }
   return 0;
 }
@@ -195,8 +196,8 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
   if (write(state.fd_out, prompt, state.prompt_length) == -1)
     return -1;
 
-  for (;;)
-  {
+  for (;;) {
+    char escape_sequence[3];
     char c;
     int nread;
 
@@ -204,10 +205,32 @@ int edit(int fd_in, int fd_out, char *buffer, size_t bufferlen, const char *prom
     if (nread <= 0)
       return state.line_length;
 
-    switch (c)
-    {
+    switch (c) {
       case ENTER:
         return state.line_length;
+      case ESC:
+        if (read(state.fd_in, escape_sequence, 2) == -1) {
+          break;
+        }
+
+        if (escape_sequence[0] == '[') {
+          switch (escape_sequence[1]) {
+            case 'A':
+              dbgln("Up arrow!");
+              break;
+            case 'B':
+              dbgln("Down arrow!");
+              break;
+            case 'C':
+              PERFORM_EDIT(edit_move_right);
+              break;
+            case 'D':
+              PERFORM_EDIT(edit_move_left);
+              break;
+          }
+        }
+
+        break;
       case CTRL_B:
         PERFORM_EDIT(edit_move_left);
         break;
@@ -267,7 +290,7 @@ char *handle_unsupported_terminal(const char *prompt)
 }
 
 /* This function is pretty common in all line editing libraries
- * so I pretty much shamlessly stole it. */
+ * so I pretty much completely stole it. :) */
 int enable_raw_mode(int fd)
 {
   struct termios raw;

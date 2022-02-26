@@ -24,6 +24,7 @@ enum KeyAction {
   CTRL_F = 6,
   CTRL_H = 8,
   CTRL_L = 12,
+  ESC = 27,
   BACKSPACE = 127,
   ENTER = 13,
 };
