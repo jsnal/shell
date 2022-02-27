@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "list.h"
+#include "util.h"
 
 // If there are more than 256 tokens then your command is too long...
 #define TEXT_MAX 256
@@ -26,7 +28,7 @@
   case type: \
     return text; \
 
-enum TokenType {
+typedef enum TokenTypeEnum {
     TT_UNKNOWN,
     TT_END_OF_INPUT,
     TT_TEXT,
@@ -42,7 +44,7 @@ enum TokenType {
     TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
     TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
     TT_FUNCTION,
-};
+} token_type_e;
 
 enum TextUnitType {
   TUT_STRING,
@@ -51,29 +53,22 @@ enum TextUnitType {
   TUT_ARITH,
 };
 
-struct SourceBuffer {
-  char *contents;
-  size_t length;
-};
-
-struct TokenState {
+typedef struct TokenState {
   int error;
-  enum TokenType type;
+  token_type_e type;
   char text[TEXT_MAX];
-  struct SourceBuffer src;
+  resize_buffer_t src;
   size_t index;
   size_t next_index;
-};
+} token_state_t;
 
-struct Token {
-  int id;
-  struct Token *next, *prev;
-  enum TokenType type;
+typedef struct Token {
+  token_type_e type;
   char *text;
-};
+} token_t;
 
 void next_token(struct TokenState*);
-struct Token *tokenize(char*);
-void tokens_to_string(struct Token*);
-void cleanup_token_list(struct Token*);
+list_t *tokenize(char*);
+void tokens_to_string(list_t *tokens);
+void cleanup_token_list(list_t *tokens);
 #endif

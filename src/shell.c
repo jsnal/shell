@@ -100,6 +100,8 @@ int shell(int print_ast, int print_tokens)
     errln("Failed to initialize main scope");
   }
 
+  list_t *tokens = NULL;
+
   for(;;)
   {
     snprintf(prompt, 64, "%s$ ", "shell");
@@ -110,18 +112,18 @@ int shell(int print_ast, int print_tokens)
 
     if (!is_empty_line(line))
     {
-      struct Token *tokens_list = tokenize(line);
+      tokens = tokenize(line);
       if (print_tokens)
-        tokens_to_string(tokens_list);
+        tokens_to_string(tokens);
 
-      tree_t *tree = parse(tokens_list);
-      if (print_ast)
-        tree_to_string(tree);
+//      tree_t *tree = parse(tokens_list);
+//      if (print_ast)
+//        tree_to_string(tree);
 
-      if (!tree) {
-        continue;
-      }
-      command_ret = execute(tree);
+//      if (!tree) {
+//        continue;
+//      }
+//      command_ret = execute(tree);
 
       /* history_line = strdup(line); */
 /*       if (parse_line(line) == -1) */
@@ -135,6 +137,7 @@ int shell(int print_ast, int print_tokens)
 /*       free(history_line); */
     }
 
+    cleanup_token_list(tokens);
     free(line);
   }
 

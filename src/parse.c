@@ -27,7 +27,7 @@ struct Token *consume_token(parse_state_t **ps, struct Token *token)
   }
 
   current = (*ps)->tokens_list;
-  while (current != NULL && current->id != token->id)
+  while (current != NULL)
     current = current->next;
 
   // Front of list

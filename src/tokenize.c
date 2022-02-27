@@ -6,6 +6,7 @@
 
 #include "tokenize.h"
 #include "util.h"
+#include "list.h"
 
 #define RESERVED_SYMBOLS_SIZE 12
 
@@ -13,26 +14,24 @@ static char reserved_symbols[RESERVED_SYMBOLS_SIZE] = {
   '(', ')', '{', '}', '!', ';', '&', '|', '>', '<', '#', '='
 };
 
-void cleanup_token_list(struct Token *tokens_list)
+void cleanup_token_list(list_t *tokens)
 {
-  struct Token *head;
-
-  while (tokens_list)
-  {
-    head = tokens_list;
-    tokens_list = tokens_list->next;
-
-    if (head->text)
-      free(head->text);
-
-    free(head);
+  token_t *t = NULL;
+  int size = list_size(tokens);
+  for (int i = 0; i < size; i++) {
+    t = (token_t*) list_remove(tokens, 0);
+    if (t->type == TT_TEXT) {
+      free(t->text);
+    }
+    free(t);
   }
-  tokens_list = NULL;
+
+  list_destroy(tokens);
 }
 
-enum TokenType tokenize_reserved_words(char *t)
+token_type_e tokenize_reserved_words(char *t)
 {
-  enum TokenType ret = TT_TEXT;
+  token_type_e ret = TT_TEXT;
 
   switch (t[0])
   {
@@ -118,10 +117,10 @@ int tokenize_text(struct TokenState *ts, size_t index)
 {
   int single_quote = 0;
 
-  if (ts->src.contents[index] == ' ')
+  if (ts->src.buffer[index] == ' ')
     return ++index;
 
-  if (ts->src.contents[index] == '\0')
+  if (ts->src.buffer[index] == '\0')
   {
     SET_TYPE(TT_END_OF_INPUT);
     return 0;
@@ -129,11 +128,11 @@ int tokenize_text(struct TokenState *ts, size_t index)
 
   for (size_t i = 0;;i++)
   {
-    if (ts->src.contents[index] == ' ' || ts->src.contents[index] == '\0' ||
-        is_reserved_text(ts->src.contents[index]))
+    if (ts->src.buffer[index] == ' ' || ts->src.buffer[index] == '\0' ||
+        is_reserved_text(ts->src.buffer[index]))
       break;
 
-    ts->text[i] = ts->src.contents[index];
+    ts->text[i] = ts->src.buffer[index];
     index++;
   }
 
@@ -149,7 +148,7 @@ void next_token(struct TokenState *ts)
 {
   size_t index = ts->next_index, start_index = ts->index;
 
-  switch (ts->src.contents[index])
+  switch (ts->src.buffer[index])
   {
     case '#':
     case '\0':
@@ -178,7 +177,7 @@ void next_token(struct TokenState *ts)
       break;
     case ';':
       index++;
-      if (ts->src.contents[index] == ';')
+      if (ts->src.buffer[index] == ';')
       {
         SET_TYPE_INC(TT_DOUBLE_SEMICOLON);
       }
@@ -187,7 +186,7 @@ void next_token(struct TokenState *ts)
       break;
     case '&':
       index++;
-      switch (ts->src.contents[index])
+      switch (ts->src.buffer[index])
       {
         case '&':
           SET_TYPE_INC(TT_AMPAMP);
@@ -202,7 +201,7 @@ void next_token(struct TokenState *ts)
       break;
     case '|':
       index++;
-      if (ts->src.contents[index] == '|')
+      if (ts->src.buffer[index] == '|')
       {
         SET_TYPE_INC(TT_PIPEPIPE);
       }
@@ -211,7 +210,7 @@ void next_token(struct TokenState *ts)
       break;
     case '>':
       index++;
-      switch (ts->src.contents[index])
+      switch (ts->src.buffer[index])
       {
         case '>':
           SET_TYPE_INC(TT_GREATERGREATER);
@@ -232,7 +231,7 @@ void next_token(struct TokenState *ts)
       break;
     case '<':
       index++;
-      switch (ts->src.contents[index])
+      switch (ts->src.buffer[index])
       {
         case '<':
           SET_TYPE_INC(TT_LESSLESS);
@@ -253,7 +252,7 @@ void next_token(struct TokenState *ts)
       break;
     case '1':
       index++;
-      if (ts->src.contents[index] == '>')
+      if (ts->src.buffer[index] == '>')
       {
         SET_TYPE_INC(TT_ONEGREATER);
         break;
@@ -261,7 +260,7 @@ void next_token(struct TokenState *ts)
       index--;
     case '2':
       index++;
-      if (ts->src.contents[index] == '>')
+      if (ts->src.buffer[index] == '>')
       {
         SET_TYPE_INC(TT_TWOGREATER);
         break;
@@ -276,24 +275,22 @@ void next_token(struct TokenState *ts)
   ts->next_index = index;
 }
 
-struct Token *tokenize(char *line)
+list_t *tokenize(char *line)
 {
   struct TokenState ts = {
     .error = 0,
     .type = TT_UNKNOWN,
     .text = { '\0' },
-    .src.contents = line,
+    .src.buffer = line,
     .src.length = strlen(line),
     .index = 0,
     .next_index = 0,
   };
 
-  struct Token *tokens_list = NULL;
+  list_t *tokens = list_create();
 
-  while (ts.type != TT_END_OF_INPUT)
-  {
-    if (ts.src.contents[ts.next_index] == ' ')
-    {
+  while (ts.type != TT_END_OF_INPUT) {
+    if (ts.src.buffer[ts.next_index] == ' ') {
       ts.next_index++;
       continue;
     }
@@ -303,45 +300,21 @@ struct Token *tokenize(char *line)
     if (ts.type == TT_END_OF_INPUT)
       break;
 
-    // TODO: make this better???
-    // Set the front of the LinkedList
-    if (tokens_list == NULL)
-    {
-      tokens_list = xcalloc(1, sizeof(struct Token));
-      tokens_list->id = 0;
-      tokens_list->type = ts.type;
-      tokens_list->prev = NULL;
+    token_t *new_token = xcalloc(1, sizeof(token_t));
+    new_token->type = ts.type;
 
-      if (ts.text[0] != '\0')
-      {
-        tokens_list->text = xstrdup(ts.text);
-        memset(ts.text, '\0', TEXT_MAX);
-      }
-
-      continue;
-    }
-
-    struct Token *current = tokens_list;
-
-    while (current->next != NULL)
-      current = current->next;
-
-    current->next = xcalloc(1, sizeof(struct Token));
-    current->next->id = current->id + 1;
-    current->next->prev = current;
-    current->next->type = ts.type;
-
-    if (ts.text[0] != '\0')
-    {
-      current->next->text = xstrdup(ts.text);
+    if (ts.type == TT_TEXT) {
+      new_token->text = xstrdup(ts.text);
       memset(ts.text, '\0', TEXT_MAX);
     }
+
+    list_append(tokens, new_token);
   }
 
-  return tokens_list;
+  return tokens;
 }
 
-char *token_stringify(enum TokenType token)
+char *token_stringify(token_type_e token)
 {
   switch (token)
   {
@@ -392,18 +365,17 @@ char *token_stringify(enum TokenType token)
   return "Symbol not found";
 }
 
-void tokens_to_string(struct Token *tokens_list)
+void tokens_to_string(list_t *tokens)
 {
-  struct Token *current = tokens_list;
+  token_t *t = NULL;
+  int size = list_size(tokens);
+  for (int i = 0; i < size; i++) {
+    t = (token_t*) list_get(tokens, i);
 
-  while (current != NULL)
-  {
-    if (current->text)
-      printf("[%s:%d] - '%s'\n", token_stringify(current->type),
-          current->id, current->text);
-    else
-      printf("[%s:%d]\n", token_stringify(current->type), current->id);
-
-    current = current->next;
+    if (t->type == TT_TEXT) {
+      printf("[%s]:'%s'\n", token_stringify(t->type), t->text);
+    } else {
+      printf("[%s]\n", token_stringify(t->type));
+    }
   }
 }
