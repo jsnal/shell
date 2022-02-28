@@ -136,7 +136,7 @@ static int tokenize_text(token_state_t *ts, int index)
   int i = 0;
   char c = ts->src.buffer[index];
 
-  while (c != ' ' && c != '\0' && !is_reserved_text(c)) {
+  while (c != ' ' && c != '\0' && c != '\n' && !is_reserved_text(c)) {
     ts->text[i++] = ts->src.buffer[index++];
     c = ts->src.buffer[index];
   }

@@ -15,7 +15,6 @@
 
 // If there are more than 256 tokens then your command is too long...
 #define TEXT_MAX 256
-#define TOKENS_SIZE 17
 
 #define SET_TYPE(token_type) \
   ts->type = (token_type)

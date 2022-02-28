@@ -89,12 +89,6 @@ char *read_line(void)
 
 int shell(int print_ast, int print_tokens)
 {
-  dbgln("Starting shell");
-
-  int command_ret = 0, readline_status;
-  char prompt[64];
-  char *history_line;
-
   variable_scope_t *main_scope;
   if ((main_scope = initialize_main_scope()) == NULL) {
     errln("Failed to initialize main scope");
@@ -102,43 +96,76 @@ int shell(int print_ast, int print_tokens)
 
   list_t *tokens = NULL;
 
-  for(;;)
-  {
-    snprintf(prompt, 64, "%s$ ", "shell");
+  if (!isatty(STDIN_FILENO)) {
+    dbgln("Running shell in script mode");
 
-    line = readline(prompt, &readline_status);
-    if (readline_status == -1)
-      return EXIT_FAILURE;
-
-    if (!is_empty_line(line))
-    {
-      tokens = tokenize(line);
-      if (print_tokens)
-        tokens_to_string(tokens);
-
-//      tree_t *tree = parse(tokens_list);
-//      if (print_ast)
-//        tree_to_string(tree);
-
-//      if (!tree) {
-//        continue;
-//      }
-//      command_ret = execute(tree);
-
-      /* history_line = strdup(line); */
-/*       if (parse_line(line) == -1) */
-/*         goto no_execute; */
-/*  */
-/*       command_ret = execute_commands(command); */
-/*       cleanup_commands(command); */
-/*  */
-/* no_execute: */
-/*       push_history(history_line); */
-/*       free(history_line); */
+    char c;
+    if ((c = fgetc(stdin)) == EOF) {
+      return 0;
     }
 
-    cleanup_token_list(tokens);
-    free(line);
+    int len = 0, capacity = 5;
+    char *buf = (char*) malloc(sizeof(char) * capacity + 1);
+
+    while (c != EOF) {
+      if (len >= capacity) {
+        capacity *= 2;
+        buf = (char*) realloc(buf, capacity * sizeof(char) + 1);
+      }
+
+      buf[len++] = c;
+      c = fgetc(stdin);
+    }
+    buf[len] = '\0';
+
+    tokens = tokenize(buf);
+    if (print_tokens) {
+      tokens_to_string(tokens);
+    }
+  } else {
+    dbgln("Starting shell interactive mode");
+
+    int command_ret = 0, readline_status;
+    char prompt[64];
+    char *history_line;
+
+    for(;;) {
+      snprintf(prompt, 64, "%s$ ", "shell");
+
+      line = readline(prompt, &readline_status);
+      if (readline_status == -1)
+        return EXIT_FAILURE;
+
+      if (!is_empty_line(line)) {
+        tokens = tokenize(line);
+        if (print_tokens) {
+          tokens_to_string(tokens);
+        }
+
+        //      tree_t *tree = parse(tokens_list);
+        //      if (print_ast)
+        //        tree_to_string(tree);
+
+        //      if (!tree) {
+        //        continue;
+        //      }
+        //      command_ret = execute(tree);
+
+        /* history_line = strdup(line); */
+        /*       if (parse_line(line) == -1) */
+        /*         goto no_execute; */
+        /*  */
+        /*       command_ret = execute_commands(command); */
+        /*       cleanup_commands(command); */
+        /*  */
+        /* no_execute: */
+        /*       push_history(history_line); */
+        /*       free(history_line); */
+      }
+
+      cleanup_token_list(tokens);
+      free(line);
+    }
   }
 
   return EXIT_SUCCESS;
