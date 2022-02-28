@@ -18,6 +18,7 @@ void cleanup_token_list(list_t *tokens)
 {
   token_t *t = NULL;
   int size = list_size(tokens);
+
   for (int i = 0; i < size; i++) {
     t = (token_t*) list_remove(tokens, 0);
     if (t->type == TT_TEXT) {
@@ -29,127 +30,127 @@ void cleanup_token_list(list_t *tokens)
   list_destroy(tokens);
 }
 
-token_type_e tokenize_reserved_words(char *t)
+static token_type_e tokenize_reserved_words(const char *t)
 {
   token_type_e ret = TT_TEXT;
 
-  switch (t[0])
-  {
+  switch (t[0]) {
     case 'c':
-      if (t[1] == L'a' && t[2] == L's' && t[3] == L'e' && t[4]== L'\0')
+      if (t[1] == L'a' && t[2] == L's' && t[3] == L'e' && t[4]== L'\0') {
         ret = TT_CASE;
+      }
       break;
     case 'd':
-      if (t[1] == 'o')
-      {
-        if (t[2] == '\0')
+      if (t[1] == 'o') {
+        if (t[2] == '\0') {
           ret = TT_DO;
+        }
 
-        if (t[2] == 'n' && t[3] == 'e' && t[4] == '\0')
+        if (t[2] == 'n' && t[3] == 'e' && t[4] == '\0') {
           ret = TT_DONE;
+        }
       }
       break;
     case 'e':
-      if (t[1] == 'l')
-      {
-        if (t[2] == 'i' && t[3] == 'f' && t[4] == '\0')
+      if (t[1] == 'l') {
+        if (t[2] == 'i' && t[3] == 'f' && t[4] == '\0') {
           ret = TT_ELIF;
+        }
 
-        if (t[2] == 's' && t[3] == 'e' && t[4] == '\0')
+        if (t[2] == 's' && t[3] == 'e' && t[4] == '\0') {
           ret = TT_ELSE;
+        }
       }
-      if (t[1] == 's' && t[2] == 'a' && t[3] == 'c' && t[4] == '\0')
+      if (t[1] == 's' && t[2] == 'a' && t[3] == 'c' && t[4] == '\0') {
         ret = TT_ESAC;
+      }
       break;
     case 'f':
-      if (t[1] == 'i' && t[2] == '\0')
+      if (t[1] == 'i' && t[2] == '\0') {
         ret = TT_FI;
+      }
 
-      if (t[1] == 'o' && t[2] == 'r' && t[3] == '\0')
+      if (t[1] == 'o' && t[2] == 'r' && t[3] == '\0') {
         ret = TT_FOR;
+      }
 
       if (t[1] == 'u' && t[2] == 'n' && t[3] == 'c' && t[4] == 't' &&
-          t[5] == 'i' && t[6] == 'o' && t[7] == 'n' && t[8] == '\0')
+          t[5] == 'i' && t[6] == 'o' && t[7] == 'n' && t[8] == '\0') {
           ret = TT_FUNCTION;
+      }
       break;
     case 'i':
-      if (t[1] == 'f' && t[2] == '\0')
+      if (t[1] == 'f' && t[2] == '\0') {
         ret = TT_IF;
+      }
 
-      if (t[1] == 'n' && t[2] == '\0')
+      if (t[1] == 'n' && t[2] == '\0') {
         ret = TT_IN;
+      }
       break;
     case 't':
-      if (t[1] == 'h' && t[2] == 'e' && t[3] == 'n' && t[4] == '\0')
+      if (t[1] == 'h' && t[2] == 'e' && t[3] == 'n' && t[4] == '\0') {
         ret = TT_THEN;
+      }
       break;
     case 'u':
-      if (t[1] == 'n' && t[2] == 't' && t[3] == 'i' && t[4] == 'l' &&
-          t[5] == '\0')
+      if (t[1] == 'n' && t[2] == 't' && t[3] == 'i' && t[4] == 'l' && t[5] == '\0') {
         ret = TT_UNTIL;
+      }
       break;
     case 'w':
-      if (t[1] == 'h' && t[2] == 'i' && t[3] == 'l' && t[4] == 'e' &&
-          t[5] == '\0')
+      if (t[1] == 'h' && t[2] == 'i' && t[3] == 'l' && t[4] == 'e' && t[5] == '\0') {
         ret = TT_WHILE;
+      }
       break;
     default:
       ret = TT_TEXT;
       break;
   }
 
-  free(t);
   return ret;
 }
 
-int is_reserved_text(const char c)
+static bool is_reserved_text(const char c)
 {
   for (int i = 0; i < RESERVED_SYMBOLS_SIZE; i++) {
     if (c == reserved_symbols[i]) {
-      return 1;
+      return true;
     }
   }
 
-  return 0;
+  return false;
 }
 
-int tokenize_text(struct TokenState *ts, size_t index)
+static int tokenize_text(token_state_t *ts, int index)
 {
-  int single_quote = 0;
-
-  if (ts->src.buffer[index] == ' ')
+  if (ts->src.buffer[index] == ' ') {
     return ++index;
+  }
 
-  if (ts->src.buffer[index] == '\0')
-  {
+  if (ts->src.buffer[index] == '\0') {
     SET_TYPE(TT_END_OF_INPUT);
-    return 0;
+    return index;
   }
 
-  for (size_t i = 0;;i++)
-  {
-    if (ts->src.buffer[index] == ' ' || ts->src.buffer[index] == '\0' ||
-        is_reserved_text(ts->src.buffer[index]))
-      break;
+  int i = 0;
+  char c = ts->src.buffer[index];
 
-    ts->text[i] = ts->src.buffer[index];
-    index++;
+  while (c != ' ' && c != '\0' && !is_reserved_text(c)) {
+    ts->text[i++] = ts->src.buffer[index++];
+    c = ts->src.buffer[index];
   }
 
-  if (single_quote)
-    SET_TYPE(TT_TEXT);
-  else
-    SET_TYPE(tokenize_reserved_words(xstrdup(ts->text)));
+  SET_TYPE(tokenize_reserved_words(ts->text));
 
   return index;
 }
 
-void next_token(struct TokenState *ts)
+static void next_token(token_state_t *ts)
 {
-  size_t index = ts->next_index, start_index = ts->index;
+  int index = ts->next_index;
 
-  switch (ts->src.buffer[index])
-  {
+  switch (ts->src.buffer[index]) {
     case '#':
     case '\0':
       SET_TYPE(TT_END_OF_INPUT);
@@ -172,22 +173,20 @@ void next_token(struct TokenState *ts)
     case '!':
       SET_TYPE_INC(TT_BANG);
       break;
-    case '=':
+    case '=': // FIXME: this breaks for things like ls --color=always...
       SET_TYPE_INC(TT_EQUAL);
       break;
     case ';':
       index++;
-      if (ts->src.buffer[index] == ';')
-      {
+      if (ts->src.buffer[index] == ';') {
         SET_TYPE_INC(TT_DOUBLE_SEMICOLON);
-      }
-      else
+      } else {
         SET_TYPE(TT_SEMICOLON);
+      }
       break;
     case '&':
       index++;
-      switch (ts->src.buffer[index])
-      {
+      switch (ts->src.buffer[index]) {
         case '&':
           SET_TYPE_INC(TT_AMPAMP);
           break;
@@ -201,17 +200,15 @@ void next_token(struct TokenState *ts)
       break;
     case '|':
       index++;
-      if (ts->src.buffer[index] == '|')
-      {
+      if (ts->src.buffer[index] == '|') {
         SET_TYPE_INC(TT_PIPEPIPE);
-      }
-      else
+      } else {
         SET_TYPE(TT_PIPE);
+      }
       break;
     case '>':
       index++;
-      switch (ts->src.buffer[index])
-      {
+      switch (ts->src.buffer[index]) {
         case '>':
           SET_TYPE_INC(TT_GREATERGREATER);
           break;
@@ -231,10 +228,14 @@ void next_token(struct TokenState *ts)
       break;
     case '<':
       index++;
-      switch (ts->src.buffer[index])
-      {
+      switch (ts->src.buffer[index]) {
         case '<':
-          SET_TYPE_INC(TT_LESSLESS);
+          index++;
+          if (ts->src.buffer[index] == '<') {
+            SET_TYPE_INC(TT_LESSLESSLESS);
+            break;
+          }
+          SET_TYPE(TT_LESSLESS);
           break;
         case '>':
           SET_TYPE_INC(TT_LESSGREATER);
@@ -251,39 +252,33 @@ void next_token(struct TokenState *ts)
       }
       break;
     case '1':
-      index++;
-      if (ts->src.buffer[index] == '>')
-      {
+      if (ts->src.buffer[index + 1] == '>') {
         SET_TYPE_INC(TT_ONEGREATER);
-        break;
+        index++;
       }
-      index--;
+      break;
     case '2':
-      index++;
-      if (ts->src.buffer[index] == '>')
-      {
+      if (ts->src.buffer[index + 1] == '>') {
         SET_TYPE_INC(TT_TWOGREATER);
-        break;
+        index++;
       }
-      index--;
+      break;
     default:
       index = tokenize_text(ts, index);
       break;
   }
 
-  ts->index = start_index;
   ts->next_index = index;
 }
 
 list_t *tokenize(char *line)
 {
-  struct TokenState ts = {
+  token_state_t ts = {
     .error = 0,
     .type = TT_UNKNOWN,
     .text = { '\0' },
     .src.buffer = line,
     .src.length = strlen(line),
-    .index = 0,
     .next_index = 0,
   };
 
@@ -297,27 +292,27 @@ list_t *tokenize(char *line)
 
     next_token(&ts);
 
-    if (ts.type == TT_END_OF_INPUT)
+    if (ts.type == TT_END_OF_INPUT) {
       break;
+    }
 
     token_t *new_token = xcalloc(1, sizeof(token_t));
     new_token->type = ts.type;
 
     if (ts.type == TT_TEXT) {
       new_token->text = xstrdup(ts.text);
-      memset(ts.text, '\0', TEXT_MAX);
     }
 
     list_append(tokens, new_token);
+    memset(ts.text, '\0', TEXT_MAX);
   }
 
   return tokens;
 }
 
-char *token_stringify(token_type_e token)
+static char *token_stringify(token_type_e token)
 {
-  switch (token)
-  {
+  switch (token) {
     TO_STRING(TT_UNKNOWN, "Unknown");
     TO_STRING(TT_END_OF_INPUT, "EOF");
     TO_STRING(TT_TEXT, "Text");
@@ -333,6 +328,7 @@ char *token_stringify(token_type_e token)
     TO_STRING(TT_PIPEPIPE, "PipePipe");
     TO_STRING(TT_LESS, "Less");
     TO_STRING(TT_LESSLESS, "LessLess");
+    TO_STRING(TT_LESSLESSLESS, "LessLessLess");
     TO_STRING(TT_LESSAMP, "LessAmp");
     TO_STRING(TT_LESSGREATER, "LessGreater");
     TO_STRING(TT_LESSLPAREN, "LessLeft Paren");
@@ -369,6 +365,7 @@ void tokens_to_string(list_t *tokens)
 {
   token_t *t = NULL;
   int size = list_size(tokens);
+
   for (int i = 0; i < size; i++) {
     t = (token_t*) list_get(tokens, i);
 

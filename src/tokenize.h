@@ -36,7 +36,7 @@ typedef enum TokenTypeEnum {
     /* Operators */
     TT_NEW_LINE, TT_EQUAL,
     TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON,
-    TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, /*TT_LESSLESSLESS,*/ TT_LESSAMP,
+    TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, TT_LESSLESSLESS, TT_LESSAMP,
     TT_LESSGREATER, TT_LESSLPAREN, TT_GREATER, TT_GREATERGREATER, TT_GREATERPIPE,
     TT_GREATERAMP, TT_GREATERLPAREN, TT_ONEGREATER, TT_TWOGREATER, TT_AMPGREATER,
 
@@ -46,20 +46,20 @@ typedef enum TokenTypeEnum {
     TT_FUNCTION,
 } token_type_e;
 
-enum TextUnitType {
-  TUT_STRING,
-  TUT_PARAM,
-  TUT_CMDSUB,
-  TUT_ARITH,
-};
+// TODO: Add "", '', and other string types
+//enum TextUnitType {
+//  TUT_STRING,
+//  TUT_PARAM,
+//  TUT_CMDSUB,
+//  TUT_ARITH,
+//};
 
 typedef struct TokenState {
   int error;
-  token_type_e type;
+  int next_index;
   char text[TEXT_MAX];
+  token_type_e type;
   resize_buffer_t src;
-  size_t index;
-  size_t next_index;
 } token_state_t;
 
 typedef struct Token {
@@ -67,7 +67,6 @@ typedef struct Token {
   char *text;
 } token_t;
 
-void next_token(struct TokenState*);
 list_t *tokenize(char*);
 void tokens_to_string(list_t *tokens);
 void cleanup_token_list(list_t *tokens);
