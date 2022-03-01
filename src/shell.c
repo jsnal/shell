@@ -7,84 +7,24 @@
 #include "debug.h"
 #include "shell.h"
 #include "variable.h"
-
 #include "list.h"
 #include "util.h"
 
-char *line;
-
-void exit_clean(int code)
-{
-  exit(code);
-}
-
-int is_empty_line(char *line)
+static bool is_empty_line(const char *line)
 {
   int len = strlen(line);
 
-  if (len < 0)
-    return 1;
-
-  for (unsigned int i = 0; i < len; i++)
-  {
-    if (!isspace(line[i]))
-      return 0;
+  if (len < 0) {
+    return true;
   }
 
-  return 1;
-}
-
-void initialize_system_environment_variables()
-{
-  /* char *cwd; */
-  /* if ((cwd = getcwd(NULL, 0)) != NULL) */
-  /*   setenv("PWD", cwd, 1); */
-  /* free(cwd); */
-  /*  */
-  /* if ((SYS_HOME = getenv("HOME")) == NULL) */
-  /*   SYS_HOME = getpwuid(getuid())->pw_dir; */
-  /*  */
-  /* setenv("OLDPWD", SYS_HOME, 1); */
-}
-
-void set_system_environment_variables()
-{
-  /* if ((SYS_PATH = getenv("PATH")) == NULL) */
-  /*   SYS_PATH = "/bin"; */
-  /*  */
-  /* PWD = getenv("PWD"); */
-  /* OLDPWD = getenv("OLDPWD"); */
-}
-
-char *read_line(void)
-{
-  int buf_size = 128;
-  char *ret_line = malloc(buf_size * sizeof(char));
-  unsigned int i = 0;
-  char c;
-
-  if (ret_line == NULL)
-  {
-    fprintf(stderr, "error: read_command: malloc failed\n");
-    exit_clean(EXIT_FAILURE);
-  }
-
-  while ((c = getchar()) != '\n')
-  {
-    if (c == EOF)
-    {
-      free(ret_line);
-      exit_clean(EXIT_SUCCESS);
+  for (int i = 0; i < len; i++) {
+    if (!isspace(line[i])) {
+      return false;
     }
-
-    if (i >= buf_size)
-      ret_line = realloc(ret_line, buf_size * 2);
-
-    ret_line[i++] = c;
   }
 
-  ret_line[i] = '\0';
-  return ret_line;
+  return true;
 }
 
 int shell(const shell_arguments_t *args)
@@ -127,7 +67,7 @@ int shell(const shell_arguments_t *args)
 
     int command_ret = 0, readline_status;
     char prompt[64];
-    char *history_line;
+    char *history_line, *line;
 
     for(;;) {
       snprintf(prompt, 64, "%s$ ", "shell");
