@@ -152,6 +152,27 @@ static bool edit_move_right(line_state_t *state)
   return true;
 }
 
+static bool edit_kill_word_backwards(line_state_t *state)
+{
+  int old_position = state->cursor_position;
+
+  while (state->cursor_position > 0 && state->buffer[state->cursor_position - 1] == ' ') {
+    state->cursor_position--;
+  }
+
+  while (state->cursor_position > 0 && state->buffer[state->cursor_position - 1] != ' ') {
+    state->cursor_position--;
+  }
+
+  memmove(state->buffer + state->cursor_position, state->buffer + old_position, state->line_length - old_position + 1);
+  state->line_length -= old_position - state->cursor_position;
+  if (!refresh(state)) {
+    return false;
+  }
+
+  return true;
+}
+
 static bool edit_clear_screen(line_state_t *state)
 {
   char *escape_sequence = "\x1b[H\x1b[2J";
@@ -224,14 +245,9 @@ static bool edit(char *buffer, size_t bufferlen, const char *prompt)
       case CTRL_B:
         PERFORM_EDIT(edit_move_left);
         break;
+      case CTRL_D:
       case CTRL_C:
         return false;
-      case CTRL_D:
-        if (state.line_length > 0)
-        { /* TODO: handle backwards kill word */ }
-        else
-          return false;
-        break;
       case CTRL_F:
         PERFORM_EDIT(edit_move_right);
         break;
@@ -241,6 +257,9 @@ static bool edit(char *buffer, size_t bufferlen, const char *prompt)
         break;
       case CTRL_L:
         PERFORM_EDIT(edit_clear_screen);
+        break;
+      case CTRL_K:
+        PERFORM_EDIT(edit_kill_word_backwards);
         break;
       default:
         if (!edit_insert(&state, c)) {
