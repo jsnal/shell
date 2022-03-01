@@ -5,42 +5,40 @@
  */
 
 #include "shell.h"
-
-#include "debug.h"
 #include <getopt.h>
 
-static struct option const longopts[] =
-{
-  {"print-ast", no_argument, NULL, 'a'},
-  {"print-tokens", no_argument, NULL, 't'},
-  {NULL, 0, NULL, 0}
+static struct option const longopts[] = {
+  { "dump-ast", no_argument, NULL, 'a' },
+  { "dump-tokens", no_argument, NULL, 't' },
+  { NULL, 0, NULL, 0 }
 };
 
 void usage()
 {
   printf("Usage: \n");
-  exit(0);
+  exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
-  int print_ast = 0;
-  int print_tokens = 0;
+  shell_arguments_t args = {
+    .dump_ast = false,
+    .dump_tokens = false,
+  };
 
-  for (;;)
-  {
+  for (;;) {
     char arg = getopt_long(argc, argv, "+at", longopts, NULL);
 
-    if (arg == -1)
+    if (arg == -1) {
       break;
+    }
 
-    switch (arg)
-    {
+    switch (arg) {
       case 'a':
-        print_ast = 1;
+        args.dump_ast = true;
         break;
       case 't':
-        print_tokens = 1;
+        args.dump_tokens = true;
         break;
       default:
         usage();
@@ -48,5 +46,5 @@ int main(int argc, char *argv[])
     }
   }
 
-  return shell(print_ast, print_tokens);
+  return shell(&args);
 }

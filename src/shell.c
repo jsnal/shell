@@ -87,7 +87,7 @@ char *read_line(void)
   return ret_line;
 }
 
-int shell(int print_ast, int print_tokens)
+int shell(const shell_arguments_t *args)
 {
   variable_scope_t *main_scope;
   if ((main_scope = initialize_main_scope()) == NULL) {
@@ -119,7 +119,7 @@ int shell(int print_ast, int print_tokens)
     buf[len] = '\0';
 
     tokens = tokenize(buf);
-    if (print_tokens) {
+    if (args->dump_tokens) {
       tokens_to_string(tokens);
     }
   } else {
@@ -138,7 +138,7 @@ int shell(int print_ast, int print_tokens)
 
       if (!is_empty_line(line)) {
         tokens = tokenize(line);
-        if (print_tokens) {
+        if (args->dump_tokens) {
           tokens_to_string(tokens);
         }
 
