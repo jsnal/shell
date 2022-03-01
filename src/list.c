@@ -161,3 +161,38 @@ size_t list_size(list_t *list)
 
   return list->size;
 }
+
+list_iterator_t *list_iterator_create(list_t *list)
+{
+  list_iterator_t *it = (list_iterator_t*) xmalloc(sizeof(list_iterator_t));
+  it->list = list;
+  it->position = 0;
+  it->remove_allowed = false;
+
+  return it;
+}
+
+bool list_iterator_has_next(list_iterator_t *it)
+{
+  return list_size(it->list) != it->position;
+}
+
+void *list_iterator_next(list_iterator_t *it)
+{
+  if (!list_iterator_has_next(it)) {
+    return NULL;
+  }
+
+  it->remove_allowed = true;
+  return list_get(it->list, it->position++);
+}
+
+void *list_iterator_remove(list_iterator_t *it)
+{
+  if (!it->remove_allowed) {
+    return NULL;
+  }
+
+  it->remove_allowed = false;
+  return list_remove(it->list, --it->position);
+}

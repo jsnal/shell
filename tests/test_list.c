@@ -196,6 +196,58 @@ TEST_CASE(remove)
 }
 TEST_CASE_END();
 
+TEST_CASE(iterator)
+{
+  list_t *list = list_create();
+
+  int *a = (int*) malloc(sizeof(int)); *a = 10;
+  int *b = (int*) malloc(sizeof(int)); *b = 20;
+  int *c = (int*) malloc(sizeof(int)); *c = 30;
+  int *d = (int*) malloc(sizeof(int)); *d = 40;
+
+  list_append(list, a);
+  list_append(list, b);
+  list_append(list, c);
+  list_append(list, d);
+
+  list_iterator_t *it = list_iterator_create(list);
+
+  ASSERT_TRUE(list_iterator_has_next(it));
+  ASSERT_EQ_INT(*a, *((int*) list_iterator_next(it)));
+  ASSERT_TRUE(list_iterator_has_next(it));
+  ASSERT_EQ_INT(*b, *((int*) list_iterator_next(it)));
+  ASSERT_TRUE(list_iterator_has_next(it));
+  ASSERT_EQ_INT(*c, *((int*) list_iterator_next(it)));
+  ASSERT_TRUE(list_iterator_has_next(it));
+  ASSERT_EQ_INT(*d, *((int*) list_iterator_next(it)));
+  ASSERT_FALSE(list_iterator_has_next(it));
+  ASSERT_NULL(list_iterator_next(it));
+
+  it = list_iterator_create(list);
+  void *ret = NULL;
+
+  ASSERT_TRUE(list_iterator_next(it));
+  ret = list_iterator_remove(it);
+  ASSERT_EQ_INT(*a, *((int*) ret));
+
+  ASSERT_TRUE(list_iterator_next(it));
+  ret = list_iterator_remove(it);
+  ASSERT_EQ_INT(*b, *((int*) ret));
+
+  ASSERT_TRUE(list_iterator_next(it));
+  ret = list_iterator_remove(it);
+  ASSERT_EQ_INT(*c, *((int*) ret));
+
+  ASSERT_TRUE(list_iterator_next(it));
+  ret = list_iterator_remove(it);
+  ASSERT_EQ_INT(*d, *((int*) ret));
+
+  ASSERT_FALSE(list_iterator_next(it));
+  ret = list_iterator_remove(it);
+  ASSERT_NULL(ret);
+}
+TEST_CASE_END();
+
 TEST_CASE(mixed)
 {
    list_t *list = list_create();
@@ -240,6 +292,7 @@ TEST_MAIN("test_list")
   TEST_RUN(append);
   TEST_RUN(set);
   TEST_RUN(remove);
+  TEST_RUN(iterator);
   TEST_RUN(mixed);
   TEST_END();
 }

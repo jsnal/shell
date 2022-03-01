@@ -21,6 +21,12 @@ typedef struct ListStruct {
   size_t size;
 } list_t;
 
+typedef struct ListIteratorStruct {
+  list_t *list;
+  int position;
+  bool remove_allowed;
+} list_iterator_t;
+
 
 list_t *list_create();
 void *list_get(list_t *list, int index);
@@ -30,5 +36,9 @@ void *list_set(list_t *list, int index, void *value);
 void *list_remove(list_t *list, int index);
 void list_destroy(list_t *list);
 size_t list_size(list_t *list);
+list_iterator_t *list_iterator_create(list_t *list);
+bool list_iterator_has_next(list_iterator_t *it);
+void *list_iterator_next(list_iterator_t *it);
+void *list_iterator_remove(list_iterator_t *it);
 
 #endif
