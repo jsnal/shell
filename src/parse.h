@@ -102,12 +102,12 @@ typedef struct TreeStruct {
 } tree_t;
 
 typedef struct ParseStateStruct {
-  struct Token *tokens_list;
+  list_t *tokens;
   node_type_e type;
   size_t index;
 } parse_state_t;
 
-tree_t *parse(struct Token*);
+tree_t *parse(list_t *tokens);
 void tree_to_string(tree_t*);
 char *terminator_to_string(terminator_type_e);
 void command_to_string(command_t*, int space);

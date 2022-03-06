@@ -37,6 +37,7 @@ void *list_remove(list_t *list, int index);
 void list_destroy(list_t *list);
 size_t list_size(list_t *list);
 list_iterator_t *list_iterator_create(list_t *list);
+void list_iterator_destroy(list_iterator_t *it);
 bool list_iterator_has_next(list_iterator_t *it);
 void *list_iterator_next(list_iterator_t *it);
 void *list_iterator_remove(list_iterator_t *it);

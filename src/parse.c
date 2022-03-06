@@ -379,17 +379,19 @@ node_type_e scan_tokens_for_node_type(parse_state_t *ps)
   }
 }
 
-tree_t *parse(struct Token *tokens_list)
+tree_t *parse(list_t *tokens)
 {
   tree_t *tree = xcalloc(1, sizeof(tree_t));
   node_t *head_node = NULL, *current = NULL;
   parse_state_t ps = {
-    .tokens_list = tokens_list,
+    .tokens = tokens,
     .type = NT_ERROR,
     .index = 0,
   };
 
 
+  token_t *token = NULL;
+  for (int i = 0; i < list_size(ps.tokens); i++) { }
   while (ps.tokens_list != NULL) {
     if ((ps.type = scan_tokens_for_node_type(&ps)) == NT_ERROR) {
       return NULL;

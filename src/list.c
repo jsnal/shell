@@ -164,12 +164,21 @@ size_t list_size(list_t *list)
 
 list_iterator_t *list_iterator_create(list_t *list)
 {
+  if (!list) {
+    return NULL;
+  }
+
   list_iterator_t *it = (list_iterator_t*) xmalloc(sizeof(list_iterator_t));
   it->list = list;
   it->position = 0;
   it->remove_allowed = false;
 
   return it;
+}
+
+void list_iterator_destroy(list_iterator_t *it)
+{
+  free(it);
 }
 
 bool list_iterator_has_next(list_iterator_t *it)

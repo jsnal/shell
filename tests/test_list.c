@@ -223,6 +223,8 @@ TEST_CASE(iterator)
   ASSERT_FALSE(list_iterator_has_next(it));
   ASSERT_NULL(list_iterator_next(it));
 
+  list_iterator_destroy(it);
+
   it = list_iterator_create(list);
   void *ret = NULL;
 
@@ -245,6 +247,8 @@ TEST_CASE(iterator)
   ASSERT_FALSE(list_iterator_next(it));
   ret = list_iterator_remove(it);
   ASSERT_NULL(ret);
+
+  list_iterator_destroy(it);
 }
 TEST_CASE_END();
 

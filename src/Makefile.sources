@@ -3,8 +3,8 @@ SOURCES = \
 					src/debug.c \
 					src/execute.c \
 					src/hashtable.c \
-					src/list.c \
 					src/line.c \
+					src/list.c \
 					src/redirect.c \
 					src/shell.c \
 					src/tokenize.c \
