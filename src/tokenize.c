@@ -17,16 +17,18 @@ static char reserved_symbols[RESERVED_SYMBOLS_SIZE] = {
 void cleanup_token_list(list_t *tokens)
 {
   token_t *t = NULL;
-  int size = list_size(tokens);
+  list_iterator_t *it = list_iterator_create(tokens);
 
-  for (int i = 0; i < size; i++) {
-    t = (token_t*) list_remove(tokens, 0);
+  while (list_iterator_next(it)) {
+    t = (token_t*) list_iterator_remove(it);
+
     if (t->type == TT_TEXT) {
       free(t->text);
     }
     free(t);
   }
 
+  list_iterator_destroy(it);
   list_destroy(tokens);
 }
 
@@ -234,6 +236,9 @@ static void next_token(token_state_t *ts)
           if (ts->src.buffer[index] == '<') {
             SET_TYPE_INC(TT_LESSLESSLESS);
             break;
+          } else if (ts->src.buffer[index] == '-') {
+            SET_TYPE_INC(TT_LESSLESSDASH);
+            break;
           }
           SET_TYPE(TT_LESSLESS);
           break;
@@ -251,16 +256,11 @@ static void next_token(token_state_t *ts)
           break;
       }
       break;
-    case '1':
-      if (ts->src.buffer[index + 1] == '>') {
-        SET_TYPE_INC(TT_ONEGREATER);
-        index++;
-      }
-      break;
-    case '2':
-      if (ts->src.buffer[index + 1] == '>') {
-        SET_TYPE_INC(TT_TWOGREATER);
-        index++;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      if (ts->src.buffer[index + 1] == '>' || ts->src.buffer[index + 1] == '<') {
+        ts->io_number = ts->src.buffer[index] - '0';
+        SET_TYPE_INC(TT_IO_NUMBER);
       }
       break;
     default:
@@ -301,6 +301,8 @@ list_t *tokenize(char *line)
 
     if (ts.type == TT_TEXT) {
       new_token->text = xstrdup(ts.text);
+    }  else if (ts.type == TT_IO_NUMBER) {
+      new_token->io_number = ts.io_number;
     }
 
     list_append(tokens, new_token);
@@ -317,6 +319,7 @@ static char *token_stringify(token_type_e token)
     TO_STRING(TT_END_OF_INPUT, "EOF");
     TO_STRING(TT_TEXT, "Text");
     TO_STRING(TT_NEW_LINE, "New Line");
+    TO_STRING(TT_IO_NUMBER, "IO Number");
     TO_STRING(TT_AMP, "Amp");
     TO_STRING(TT_AMPAMP, "AmpAmp");
     TO_STRING(TT_LPAREN, "Left Paren");
@@ -328,6 +331,7 @@ static char *token_stringify(token_type_e token)
     TO_STRING(TT_PIPEPIPE, "PipePipe");
     TO_STRING(TT_LESS, "Less");
     TO_STRING(TT_LESSLESS, "LessLess");
+    TO_STRING(TT_LESSLESSDASH, "LessLessDash");
     TO_STRING(TT_LESSLESSLESS, "LessLessLess");
     TO_STRING(TT_LESSAMP, "LessAmp");
     TO_STRING(TT_LESSGREATER, "LessGreater");
@@ -337,8 +341,6 @@ static char *token_stringify(token_type_e token)
     TO_STRING(TT_GREATERPIPE, "GreaterPipe");
     TO_STRING(TT_GREATERAMP, "GreaterAmp");
     TO_STRING(TT_GREATERLPAREN, "GreaterLeft Paren");
-    TO_STRING(TT_ONEGREATER, "One Greater");
-    TO_STRING(TT_TWOGREATER, "Two Greater");
     TO_STRING(TT_AMPGREATER, "AmpGreater");
     TO_STRING(TT_IF, "If");
     TO_STRING(TT_THEN, "Then");
@@ -361,18 +363,22 @@ static char *token_stringify(token_type_e token)
   return "Symbol not found";
 }
 
-void tokens_to_string(list_t *tokens)
+void tokens_to_string(list_t *const tokens)
 {
   token_t *t = NULL;
-  int size = list_size(tokens);
+  list_iterator_t *it = list_iterator_create(tokens);
 
-  for (int i = 0; i < size; i++) {
-    t = (token_t*) list_get(tokens, i);
+  while (list_iterator_has_next(it)) {
+    t = (token_t*) list_iterator_next(it);
 
     if (t->type == TT_TEXT) {
       printf("[%s]:'%s'\n", token_stringify(t->type), t->text);
+    } else if (t->type == TT_IO_NUMBER) {
+      printf("[%s]:%d\n", token_stringify(t->type), t->io_number);
     } else {
       printf("[%s]\n", token_stringify(t->type));
     }
   }
+
+  list_iterator_destroy(it);
 }

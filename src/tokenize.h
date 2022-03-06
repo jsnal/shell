@@ -28,21 +28,23 @@
     return text; \
 
 typedef enum TokenTypeEnum {
-    TT_UNKNOWN,
-    TT_END_OF_INPUT,
-    TT_TEXT,
+  TT_UNKNOWN,
+  TT_END_OF_INPUT,
+  TT_TEXT,
+  TT_NEW_LINE,
+  TT_IO_NUMBER,
 
-    /* Operators */
-    TT_NEW_LINE, TT_EQUAL,
-    TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON,
-    TT_PIPE, TT_PIPEPIPE, TT_LESS, TT_LESSLESS, TT_LESSLESSLESS, TT_LESSAMP,
-    TT_LESSGREATER, TT_LESSLPAREN, TT_GREATER, TT_GREATERGREATER, TT_GREATERPIPE,
-    TT_GREATERAMP, TT_GREATERLPAREN, TT_ONEGREATER, TT_TWOGREATER, TT_AMPGREATER,
+  /* Operators */
+  TT_EQUAL,
+  TT_AMP, TT_AMPAMP, TT_LPAREN, TT_RPAREN, TT_SEMICOLON, TT_DOUBLE_SEMICOLON, TT_PIPE, TT_PIPEPIPE,
+  TT_LESS, TT_LESSLESS, TT_LESSLESSDASH, TT_LESSLESSLESS,  TT_LESSAMP, TT_LESSGREATER, TT_LESSLPAREN,
+  TT_GREATER, TT_GREATERGREATER, TT_GREATERPIPE, TT_GREATERAMP, TT_GREATERLPAREN,
+  TT_AMPGREATER,
 
-    /* Reserved Words */
-    TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
-    TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
-    TT_FUNCTION,
+  /* Reserved Words */
+  TT_IF, TT_THEN, TT_ELSE, TT_ELIF, TT_FI, TT_DO, TT_DONE, TT_CASE, TT_ESAC,
+  TT_WHILE, TT_UNTIL, TT_FOR, TT_LBRACE, TT_RBRACE, TT_BANG, TT_IN,
+  TT_FUNCTION,
 } token_type_e;
 
 // TODO: Add "", '', and other string types
@@ -56,17 +58,23 @@ typedef enum TokenTypeEnum {
 typedef struct TokenState {
   int error;
   int next_index;
-  char text[TEXT_MAX];
   token_type_e type;
   resize_buffer_t src;
+  union {
+    char text[TEXT_MAX];
+    unsigned int io_number;
+  };
 } token_state_t;
 
 typedef struct Token {
   token_type_e type;
-  char *text;
+  union {
+    char *text;
+    unsigned int io_number;
+  };
 } token_t;
 
 list_t *tokenize(char*);
-void tokens_to_string(list_t *tokens);
+void tokens_to_string(list_t *const tokens);
 void cleanup_token_list(list_t *tokens);
 #endif
