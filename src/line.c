@@ -49,7 +49,7 @@ static bool refresh(line_state_t *state)
   char *buffer = state->buffer;
   size_t line_length = state->line_length;
   size_t cursor_position = state->cursor_position;
-  resize_buffer_t *resize_buffer = create_resize_buffer(32);
+  resize_buffer_t *resize_buffer = resize_buffer_create(32);
 
   while (state->prompt_length + state->cursor_position >= state->columns) {
     buffer++;
@@ -63,18 +63,18 @@ static bool refresh(line_state_t *state)
 
   /* Move the cursor to the left edge */
   snprintf(escape_sequence, 64, "\r");
-  resize_buffer_append(resize_buffer, escape_sequence);
+  resize_buffer_append_str(resize_buffer, escape_sequence);
 
-  resize_buffer_append(resize_buffer, state->prompt);
-  resize_buffer_append(resize_buffer, state->buffer);
+  resize_buffer_append_str(resize_buffer, state->prompt);
+  resize_buffer_append_str(resize_buffer, state->buffer);
 
   /* Erase to right if something was deleted */
   snprintf(escape_sequence, 64, "\x1b[0K");
-  resize_buffer_append(resize_buffer, escape_sequence);
+  resize_buffer_append_str(resize_buffer, escape_sequence);
 
   /* Move cursor to original position */
   snprintf(escape_sequence, 64, "\r\x1b[%dC", (int) (state->cursor_position + state->prompt_length));
-  resize_buffer_append(resize_buffer, escape_sequence);
+  resize_buffer_append_str(resize_buffer, escape_sequence);
 
   if (write(state->fd_out, resize_buffer->buffer, resize_buffer->length) == -1) {
     return false;

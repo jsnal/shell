@@ -44,21 +44,14 @@ int shell(const shell_arguments_t *args)
       return 0;
     }
 
-    int len = 0, capacity = 5;
-    char *buf = (char*) malloc(sizeof(char) * capacity + 1);
+    resize_buffer_t *b = resize_buffer_create(32);
 
     while (c != EOF) {
-      if (len >= capacity) {
-        capacity *= 2;
-        buf = (char*) realloc(buf, capacity * sizeof(char) + 1);
-      }
-
-      buf[len++] = c;
+      resize_buffer_append_char(b, c);
       c = fgetc(stdin);
     }
-    buf[len] = '\0';
 
-    tokens = tokenize(buf);
+    tokens = tokenize(b->buffer);
     if (args->dump_tokens) {
       tokens_to_string(tokens);
     }

@@ -124,6 +124,37 @@ static bool is_reserved_text(const char c)
   return false;
 }
 
+#include "debug.h"
+
+static void tokenize_word(token_state_t *ts)
+{
+  int index = ts->next_index;
+  if (ts->src.buffer[index] == '\0') {
+    SET_TYPE(TT_END_OF_INPUT);
+    return;
+  }
+
+  ts->word = resize_buffer_create(DEFAULT_WORD_LEN);
+
+  if (ts->src.buffer[index] == '\'') {
+    dbgln("single quote word");
+  } else if (ts->src.buffer[index] == '\"') {
+    dbgln("double quote word");
+  } else {
+    dbgln("regular word");
+
+//    if (is_reserved_text())
+    int buf_index = 0;
+    char c = ts->src.buffer[index];
+    while (c != ' ' && c != '\0' && c != '\n' && !is_reserved_text(c)) {
+      ts->word->buffer[buf_index++] = ts->src.buffer[index++];
+      c = ts->src.buffer[index];
+    }
+  }
+
+  ts->next_index = ts->next_index + 3;
+}
+
 static int tokenize_text(token_state_t *ts, int index)
 {
   if (ts->src.buffer[index] == ' ') {
@@ -153,6 +184,8 @@ static void next_token(token_state_t *ts)
   int index = ts->next_index;
 
   switch (ts->src.buffer[index]) {
+    case '\\':
+      break;
     case '#':
     case '\0':
       SET_TYPE(TT_END_OF_INPUT);
@@ -263,9 +296,13 @@ static void next_token(token_state_t *ts)
         SET_TYPE_INC(TT_IO_NUMBER);
       }
       break;
-    default:
-      index = tokenize_text(ts, index);
+    case ' ':
+      index++;
       break;
+    default:
+//      index = tokenize_text(ts, index);
+      tokenize_word(ts);
+      return;
   }
 
   ts->next_index = index;

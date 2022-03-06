@@ -15,6 +15,7 @@
 
 // If there are more than 256 tokens then your command is too long...
 #define TEXT_MAX 256
+#define DEFAULT_WORD_LEN 32
 
 #define SET_TYPE(token_type) \
   ts->type = (token_type)
@@ -30,6 +31,7 @@
 typedef enum TokenTypeEnum {
   TT_UNKNOWN,
   TT_END_OF_INPUT,
+  TT_WORD,
   TT_TEXT,
   TT_NEW_LINE,
   TT_IO_NUMBER,
@@ -61,6 +63,7 @@ typedef struct TokenState {
   token_type_e type;
   resize_buffer_t src;
   union {
+    resize_buffer_t *word;
     char text[TEXT_MAX];
     unsigned int io_number;
   };
