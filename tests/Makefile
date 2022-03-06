@@ -6,7 +6,7 @@ include ../src/Makefile.sources
 COMMON_SOURCES = $(addprefix ../, $(SOURCES))
 
 COMMON_OBJECTS = ${COMMON_SOURCES:.c=.o}
-TESTS = test_list test_hashtable
+TESTS = test_list test_hashtable test_resize_buffer
 
 all: $(TESTS)
 

@@ -56,16 +56,38 @@ char *xstrdup(const char *s)
   return str;
 }
 
-bool resize_buffer_append(resize_buffer_t *b, const char *str, size_t length)
+resize_buffer_t *create_resize_buffer(size_t capacity)
 {
-  char *new = realloc(b->buffer, b->length + length);
+  resize_buffer_t *rb = (resize_buffer_t*) xmalloc(sizeof(resize_buffer_t));
+  rb->buffer = (char*) xmalloc(sizeof(char) * capacity);
+  rb->length = 0;
+  rb->capacity = capacity;
 
-  if (new == NULL) {
-    return false;
+  return rb;
+}
+
+bool resize_buffer_append(resize_buffer_t *b, const char *str)
+{
+  size_t length = strlen(str);
+
+  if (b->length + length > b->capacity) {
+    b->capacity *= 2;
+    b->buffer = realloc(b->buffer, b->capacity);
+
+    if (b->buffer == NULL) {
+      return false;
+    }
   }
 
-  memcpy(new + b->length, str, length);
-  b->buffer = new;
+  memcpy(b->buffer + b->length, str, length);
   b->length += length;
+  b->buffer[b->length] = '\0';
+
   return true;
+}
+
+void destroy_resize_buffer(resize_buffer_t *b)
+{
+  free(b->buffer);
+  free(b);
 }
