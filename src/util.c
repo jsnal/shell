@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021-2022, Jason Long.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include "util.h"
 #include "debug.h"
 #include "errno.h"
@@ -56,7 +62,7 @@ char *xstrdup(const char *s)
   return str;
 }
 
-resize_buffer_t *create_resize_buffer(size_t capacity)
+resize_buffer_t *resize_buffer_create(size_t capacity)
 {
   resize_buffer_t *rb = (resize_buffer_t*) xmalloc(sizeof(resize_buffer_t));
   rb->buffer = (char*) xmalloc(sizeof(char) * capacity);
@@ -66,10 +72,14 @@ resize_buffer_t *create_resize_buffer(size_t capacity)
   return rb;
 }
 
-bool resize_buffer_append(resize_buffer_t *b, const char *str)
+void destroy_resize_buffer(resize_buffer_t *b)
 {
-  size_t length = strlen(str);
+  free(b->buffer);
+  free(b);
+}
 
+static bool resize_buffer(resize_buffer_t *b, size_t length)
+{
   if (b->length + length > b->capacity) {
     b->capacity *= 2;
     b->buffer = realloc(b->buffer, b->capacity);
@@ -79,15 +89,31 @@ bool resize_buffer_append(resize_buffer_t *b, const char *str)
     }
   }
 
+  return true;
+}
+
+bool resize_buffer_append_char(resize_buffer_t *b, const char c)
+{
+  if (!resize_buffer(b, 1)) {
+    return false;
+  }
+
+  b->buffer[b->length++] = c;
+  b->buffer[b->length] = '\0';
+  return true;
+}
+
+bool resize_buffer_append_str(resize_buffer_t *b, const char *str)
+{
+  size_t length = strlen(str);
+
+  if (!resize_buffer(b, length)) {
+    return false;
+  }
+
   memcpy(b->buffer + b->length, str, length);
   b->length += length;
   b->buffer[b->length] = '\0';
 
   return true;
-}
-
-void destroy_resize_buffer(resize_buffer_t *b)
-{
-  free(b->buffer);
-  free(b);
 }
