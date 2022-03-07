@@ -71,6 +71,11 @@ int shell(const shell_arguments_t *args)
 
       if (!is_empty_line(line)) {
         tokens = tokenize(line);
+
+        if (!tokens) {
+          continue;
+        }
+
         if (args->dump_tokens) {
           tokens_to_string(tokens);
         }

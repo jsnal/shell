@@ -8,10 +8,10 @@
 #include "util.h"
 #include "list.h"
 
-#define RESERVED_SYMBOLS_SIZE 12
+#define RESERVED_SYMBOLS_SIZE 13
 
 static char reserved_symbols[RESERVED_SYMBOLS_SIZE] = {
-  '(', ')', '{', '}', '!', ';', '&', '|', '>', '<', '#', '='
+  '(', ')', '{', '}', '!', ';', '&', '|', '>', '<', '#', '=', '\''
 };
 
 void cleanup_token_list(list_t *tokens)
@@ -22,8 +22,8 @@ void cleanup_token_list(list_t *tokens)
   while (list_iterator_next(it)) {
     t = (token_t*) list_iterator_remove(it);
 
-    if (t->type == TT_TEXT) {
-      free(t->text);
+    if (t->type == TT_WORD) {
+      free(t->word);
     }
     free(t);
   }
@@ -34,7 +34,7 @@ void cleanup_token_list(list_t *tokens)
 
 static token_type_e tokenize_reserved_words(const char *t)
 {
-  token_type_e ret = TT_TEXT;
+  token_type_e ret = TT_WORD;
 
   switch (t[0]) {
     case 'c':
@@ -106,14 +106,14 @@ static token_type_e tokenize_reserved_words(const char *t)
       }
       break;
     default:
-      ret = TT_TEXT;
+      ret = TT_WORD;
       break;
   }
 
   return ret;
 }
 
-static bool is_reserved_text(const char c)
+static bool is_reserved_symbol(const char c)
 {
   for (int i = 0; i < RESERVED_SYMBOLS_SIZE; i++) {
     if (c == reserved_symbols[i]) {
@@ -126,57 +126,62 @@ static bool is_reserved_text(const char c)
 
 #include "debug.h"
 
-static void tokenize_word(token_state_t *ts)
+static int find_next_single_quote(const token_state_t *const ts, int start)
+{
+  char c = ts->src.buffer[start];
+
+  while (c != '\0') {
+    if (c == '\'') {
+      return start;
+    }
+    c = ts->src.buffer[++start];
+  }
+
+  return -1;
+}
+
+static bool tokenize_word(token_state_t *ts)
 {
   int index = ts->next_index;
   if (ts->src.buffer[index] == '\0') {
     SET_TYPE(TT_END_OF_INPUT);
-    return;
+    return true;
   }
 
   ts->word = resize_buffer_create(DEFAULT_WORD_LEN);
 
   if (ts->src.buffer[index] == '\'') {
-    dbgln("single quote word");
+    index++;
+    int location = find_next_single_quote(ts, index);
+
+    if (location == -1) {
+      errln("No closing single quote found");
+      return false;
+    }
+
+    char c = ts->src.buffer[index];
+    while (index < location) {
+      resize_buffer_append_char(ts->word, c);
+      c = ts->src.buffer[++index];
+    }
+
+    // Go past the last quote
+    index++;
+    ts->type = TT_WORD;
   } else if (ts->src.buffer[index] == '\"') {
     dbgln("double quote word");
   } else {
-    dbgln("regular word");
-
-//    if (is_reserved_text())
-    int buf_index = 0;
     char c = ts->src.buffer[index];
-    while (c != ' ' && c != '\0' && c != '\n' && !is_reserved_text(c)) {
-      ts->word->buffer[buf_index++] = ts->src.buffer[index++];
-      c = ts->src.buffer[index];
+    while (c != ' ' && c != '\0' && c != '\n' && !is_reserved_symbol(c)) {
+      resize_buffer_append_char(ts->word, c);
+      c = ts->src.buffer[++index];
     }
+
+    ts->type = tokenize_reserved_words(ts->word->buffer);
   }
 
-  ts->next_index = ts->next_index + 3;
-}
-
-static int tokenize_text(token_state_t *ts, int index)
-{
-  if (ts->src.buffer[index] == ' ') {
-    return ++index;
-  }
-
-  if (ts->src.buffer[index] == '\0') {
-    SET_TYPE(TT_END_OF_INPUT);
-    return index;
-  }
-
-  int i = 0;
-  char c = ts->src.buffer[index];
-
-  while (c != ' ' && c != '\0' && c != '\n' && !is_reserved_text(c)) {
-    ts->text[i++] = ts->src.buffer[index++];
-    c = ts->src.buffer[index];
-  }
-
-  SET_TYPE(tokenize_reserved_words(ts->text));
-
-  return index;
+  ts->next_index = index;
+  return true;
 }
 
 static void next_token(token_state_t *ts)
@@ -301,7 +306,9 @@ static void next_token(token_state_t *ts)
       break;
     default:
 //      index = tokenize_text(ts, index);
-      tokenize_word(ts);
+      if (!tokenize_word(ts)) {
+        ts->type = TT_UNKNOWN;
+      }
       return;
   }
 
@@ -313,7 +320,6 @@ list_t *tokenize(char *line)
   token_state_t ts = {
     .error = 0,
     .type = TT_UNKNOWN,
-    .text = { '\0' },
     .src.buffer = line,
     .src.length = strlen(line),
     .next_index = 0,
@@ -329,6 +335,10 @@ list_t *tokenize(char *line)
 
     next_token(&ts);
 
+    if (ts.type == TT_UNKNOWN) {
+      return NULL;
+    }
+
     if (ts.type == TT_END_OF_INPUT) {
       break;
     }
@@ -336,14 +346,14 @@ list_t *tokenize(char *line)
     token_t *new_token = xcalloc(1, sizeof(token_t));
     new_token->type = ts.type;
 
-    if (ts.type == TT_TEXT) {
-      new_token->text = xstrdup(ts.text);
+    if (ts.type == TT_WORD) {
+      new_token->word = xstrdup(ts.word->buffer);
+      destroy_resize_buffer(ts.word);
     }  else if (ts.type == TT_IO_NUMBER) {
       new_token->io_number = ts.io_number;
     }
 
     list_append(tokens, new_token);
-    memset(ts.text, '\0', TEXT_MAX);
   }
 
   return tokens;
@@ -354,7 +364,7 @@ static char *token_stringify(token_type_e token)
   switch (token) {
     TO_STRING(TT_UNKNOWN, "Unknown");
     TO_STRING(TT_END_OF_INPUT, "EOF");
-    TO_STRING(TT_TEXT, "Text");
+    TO_STRING(TT_WORD, "Word");
     TO_STRING(TT_NEW_LINE, "New Line");
     TO_STRING(TT_IO_NUMBER, "IO Number");
     TO_STRING(TT_AMP, "Amp");
@@ -408,8 +418,8 @@ void tokens_to_string(list_t *const tokens)
   while (list_iterator_has_next(it)) {
     t = (token_t*) list_iterator_next(it);
 
-    if (t->type == TT_TEXT) {
-      printf("[%s]:'%s'\n", token_stringify(t->type), t->text);
+    if (t->type == TT_WORD) {
+      printf("[%s]:'%s'\n", token_stringify(t->type), t->word);
     } else if (t->type == TT_IO_NUMBER) {
       printf("[%s]:%d\n", token_stringify(t->type), t->io_number);
     } else {

@@ -32,7 +32,6 @@ typedef enum TokenTypeEnum {
   TT_UNKNOWN,
   TT_END_OF_INPUT,
   TT_WORD,
-  TT_TEXT,
   TT_NEW_LINE,
   TT_IO_NUMBER,
 
@@ -64,7 +63,6 @@ typedef struct TokenState {
   resize_buffer_t src;
   union {
     resize_buffer_t *word;
-    char text[TEXT_MAX];
     unsigned int io_number;
   };
 } token_state_t;
@@ -72,7 +70,7 @@ typedef struct TokenState {
 typedef struct Token {
   token_type_e type;
   union {
-    char *text;
+    char *word;
     unsigned int io_number;
   };
 } token_t;
