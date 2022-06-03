@@ -90,6 +90,35 @@ TEST_CASE(get)
 }
 TEST_CASE_END();
 
+TEST_CASE(get_index)
+{
+  list_t *list = list_create();
+
+  int *a = (int*) malloc(sizeof(int)); *a = 10;
+  int *b = (int*) malloc(sizeof(int)); *b = 20;
+  int *c = (int*) malloc(sizeof(int)); *c = 30;
+  int *d = (int*) malloc(sizeof(int)); *d = 40;
+  int *e = (int*) malloc(sizeof(int)); *e = 50;
+  int *f = (int*) malloc(sizeof(int)); *e = 50;
+
+  list_append(list, a);
+  list_append(list, b);
+  list_append(list, c);
+  list_append(list, d);
+  list_append(list, e);
+
+  ASSERT_EQ_INT(5, list_size(list));
+  ASSERT_EQ_INT(0, list_get_index(list, (void*) a));
+  ASSERT_EQ_INT(1, list_get_index(list, (void*) b));
+  ASSERT_EQ_INT(2, list_get_index(list, (void*) c));
+  ASSERT_EQ_INT(3, list_get_index(list, (void*) d));
+  ASSERT_EQ_INT(4, list_get_index(list, (void*) e));
+  ASSERT_EQ_INT(-1, list_get_index(list, (void*) f));
+
+  list_destroy(list);
+}
+TEST_CASE_END();
+
 TEST_CASE(append)
 {
   list_t *list = list_create();
@@ -292,6 +321,7 @@ TEST_MAIN("test_list")
   TEST_START();
   TEST_RUN(create_destroy);
   TEST_RUN(get);
+  TEST_RUN(get_index);
   TEST_RUN(add);
   TEST_RUN(append);
   TEST_RUN(set);

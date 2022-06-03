@@ -9,7 +9,7 @@
 #include "parse.h"
 #include "util.h"
 
-struct Token *consume_token(parse_state_t **ps, struct Token *token)
+struct Token *consume_token(parse_state_t *ps, token_t *token)
 {
   if ((*ps)->tokens_list == NULL)
     return NULL;

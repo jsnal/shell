@@ -56,6 +56,19 @@ void *list_get(list_t *list, int index)
   return current ? current->value : NULL;
 }
 
+int list_get_index(list_t *list, void *value)
+{
+  list_entry_t *current = list->head->next;
+  for (int i = 0; i < list->size; i++) {
+    if (current->value == value) {
+      return i;
+    }
+    current = current->next;
+  }
+
+  return -1;
+}
+
 bool list_add(list_t *list, int index, void *value)
 {
   if (index < 0 || index > list->size) {

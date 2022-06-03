@@ -80,14 +80,15 @@ int shell(const shell_arguments_t *args)
           tokens_to_string(tokens);
         }
 
-        //      tree_t *tree = parse(tokens_list);
-        //      if (print_ast)
-        //        tree_to_string(tree);
+        /* tree_t *tree = parse(tokens); */
+        /* if (args->dump_ast) { */
+        /*   tree_to_string(tree); */
+        /* } */
 
-        //      if (!tree) {
-        //        continue;
-        //      }
-        //      command_ret = execute(tree);
+        /* if (!tree) { */
+        /*   continue; */
+        /* } */
+        /* command_ret = execute(tree); */
 
         /* history_line = strdup(line); */
         /*       if (parse_line(line) == -1) */

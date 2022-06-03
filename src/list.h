@@ -29,17 +29,18 @@ typedef struct ListIteratorStruct {
 
 
 list_t *list_create();
-void *list_get(list_t *list, int index);
-bool list_add(list_t *list, int index, void *value);
-bool list_append(list_t *list, void *value);
-void *list_set(list_t *list, int index, void *value);
-void *list_remove(list_t *list, int index);
-void list_destroy(list_t *list);
-size_t list_size(list_t *list);
-list_iterator_t *list_iterator_create(list_t *list);
-void list_iterator_destroy(list_iterator_t *it);
-bool list_iterator_has_next(list_iterator_t *it);
-void *list_iterator_next(list_iterator_t *it);
-void *list_iterator_remove(list_iterator_t *it);
+void *list_get(list_t*, int index);
+int list_get_index(list_t*, void*);
+bool list_add(list_t*, int index, void *value);
+bool list_append(list_t*, void *value);
+void *list_set(list_t*, int index, void *value);
+void *list_remove(list_t*, int index);
+void list_destroy(list_t*);
+size_t list_size(list_t*);
+list_iterator_t *list_iterator_create(list_t*);
+void list_iterator_destroy(list_iterator_t*);
+bool list_iterator_has_next(list_iterator_t*);
+void *list_iterator_next(list_iterator_t*);
+void *list_iterator_remove(list_iterator_t*);
 
 #endif
