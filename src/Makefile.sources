@@ -10,6 +10,7 @@ SOURCES = \
 					src/tokenize.c \
 					src/util.c \
 					src/variable.c \
+					src/parse.c \
 
 OBJECTS = ${SOURCES:.c=.o}
 HEADERS = ${SOURCES:.c=.h}

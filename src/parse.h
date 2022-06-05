@@ -79,7 +79,6 @@ typedef struct AndOrStruct {
 typedef enum NodeTypeEnum {
   NT_ANDOR,
   NT_CASE,
-  NT_ERROR,
   NT_FUNCTION,
   NT_IF,
   NT_PIPELINE,
@@ -98,7 +97,7 @@ typedef struct NodeStruct {
 } node_t;
 
 typedef struct TreeStruct {
-  node_t *nodes;
+  list_t *nodes;
 } tree_t;
 
 typedef struct ParseStateStruct {

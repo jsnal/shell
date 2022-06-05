@@ -9,62 +9,35 @@
 #include "parse.h"
 #include "util.h"
 
-struct Token *consume_token(parse_state_t *ps, token_t *token)
+token_t *consume_token(parse_state_t *ps, token_t *token)
 {
-  if ((*ps)->tokens_list == NULL)
+  int index = list_get_index(ps->tokens, token);
+
+  if (index == -1) {
     return NULL;
-
-  struct Token *current = (*ps)->tokens_list;
-  size_t list_size;
-
-  for (list_size = 0; current != NULL; list_size++)
-    current = current->next;
-
-  if (list_size == 1)
-  {
-    (*ps)->tokens_list = NULL;
-    return token;
   }
 
-  current = (*ps)->tokens_list;
-  while (current != NULL)
-    current = current->next;
-
-  // Front of list
-  if (current->prev == NULL)
-  {
-    (*ps)->tokens_list = (*ps)->tokens_list->next;
-    (*ps)->tokens_list->prev = NULL;
-    return current;
-  }
-
-  // Back of list
-  if (current->next == NULL)
-  {
-    (*current).prev->next = NULL;
-    return current;
-  }
-
-  (*current).prev->next = current->next;
-  (*current).next->prev = current->prev;
-  return current;
+  return list_remove(ps->tokens, index);
 }
 
-static redirect_t *parse_redirect(parse_state_t *ps,
-                                  struct Token *r,
-                                  redirect_type_e type,
-                                  int *status)
+static token_t *peek(const parse_state_t *ps)
 {
-  if (r->next == NULL || r->next->type != TT_TEXT) {
+  return list_get(ps->tokens, 0);
+}
+
+static redirect_t *parse_redirect(parse_state_t *ps, token_t *r, redirect_type_e type, int *status)
+{
+  token_t *next_token = list_get(ps->tokens, list_get_index(ps->tokens, r) + 1);
+  if (next_token == NULL || next_token->type != TT_WORD) {
     *status = -1;
     return NULL;
   }
 
   redirect_t *redirect = (redirect_t*) xcalloc(1, sizeof(redirect_t));
   redirect->type = type;
-  redirect->file = r->next->text;
-  consume_token(&ps, r->next);
-  consume_token(&ps, r);
+  redirect->file = next_token->word;
+  consume_token(ps, next_token);
+  consume_token(ps, r);
 
   *status = 1;
   return redirect;
@@ -72,11 +45,13 @@ static redirect_t *parse_redirect(parse_state_t *ps,
 
 static bool parse_redirects(parse_state_t *ps, list_t *redirects)
 {
-  struct Token *current = ps->tokens_list;
+  token_t *current = ps->tokens_list;
+  redirect_t *redirect = NULL;
+  int status = 0;
 
   while (current != NULL) {
-    redirect_t *redirect = NULL;
-    int status = 0;
+    redirect = NULL;
+    status = 0;
 
     switch (current->type) {
       case TT_LESS:
@@ -128,7 +103,6 @@ static bool parse_redirects(parse_state_t *ps, list_t *redirects)
 
 command_t *parse_simple_command(parse_state_t *ps)
 {
-  struct Token *current = ps->tokens_list;
   command_t *cmd = xcalloc(1, sizeof(command_t));
   size_t argc = 0;
 
@@ -141,30 +115,31 @@ command_t *parse_simple_command(parse_state_t *ps)
     return NULL;
   }
 
-  while (current != NULL) {
-    switch (current->type) {
-      case TT_IF:    case TT_THEN: case TT_ELSE: case TT_ELIF: case TT_FI:
-      case TT_DO:    case TT_DONE: case TT_CASE: case TT_ESAC: case TT_WHILE:
-      case TT_UNTIL: case TT_FOR:  case TT_IN:   case TT_FUNCTION: case TT_TEXT:
-        cmd->argv[argc++] = current->text;
-        struct Token *consumed_token = consume_token(&ps, current);
-        current = current->next;
-        free(consumed_token);
+  token_t *token = NULL;
+  list_iterator_t *it = list_iterator_create(ps->tokens);
+
+  while (list_iterator_has_next(it)) {
+    token = (token_t*) list_iterator_next(it);
+    switch (token->type) {
+      case TT_WORD:
+        // FIXME: this is probably broken...
+        // cmd->argv[argc++] = token->word;
+        strcpy(cmd->argv[argc++], token->word);
         break;
       case TT_AMP:
-        consume_token(&ps, current);
         cmd->terminator = MT_BACKGROUND;
         cmd->argc = argc;
         return cmd;
       case TT_SEMICOLON:
-        consume_token(&ps, current);
         cmd->terminator = MT_SEQUENCE;
         cmd->argc = argc;
         return cmd;
       default:
-        current = current->next;
-        break;
+        errln("Simple command failed to parse");
+        return NULL;
     }
+
+    consume_token(ps, token);
   }
 
   cmd->argc = argc;
@@ -294,8 +269,7 @@ node_t *parse_to_node(parse_state_t *ps)
   node_t *node = (node_t*) xcalloc(1, sizeof(node_t));
   node->type = ps->type;
 
-  switch (ps->type)
-  {
+  switch (ps->type) {
     case NT_ANDOR:
       node->andor = parse_andor(ps);
       break;
@@ -306,17 +280,21 @@ node_t *parse_to_node(parse_state_t *ps)
     case NT_IF:
       TODO;
     case NT_PIPELINE:
-      if ((node->pipeline = parse_pipeline(ps)) == NULL)
+      if ((node->pipeline = parse_pipeline(ps)) == NULL) {
         return NULL;
+      }
+
       break;
     case NT_SIMPLE_COMMAND:
-      if ((node->command = parse_simple_command(ps)) == NULL)
+      if ((node->command = parse_simple_command(ps)) == NULL) {
         return NULL;
+      }
+
       break;
     case NT_WHILE:
       TODO;
     default:
-      fprintf(stderr, "error: parse_to_node: unknown node type\n");
+      errln("Unknown node type to parse");
       free(node);
       return NULL;
   }
@@ -326,86 +304,113 @@ node_t *parse_to_node(parse_state_t *ps)
 
 int scan_tokens_for_andor(parse_state_t *ps)
 {
-  struct Token *current = ps->tokens_list;
-
-  while (current != NULL)
-  {
-    if (current->type == TT_AMPAMP || current->type == TT_PIPEPIPE)
-      return 1;
-
-    current = current->next;
+  token_t *token = NULL;
+  list_iterator_t *it = list_iterator_create(ps->tokens);
+  while (list_iterator_has_next(it)) {
+    token = (token_t*) list_iterator_next(it);
+    if (token->type == TT_AMPAMP || token->type == TT_PIPEPIPE) {
+      return true;
+    }
   }
 
-  return 0;
+  return false;
 }
 
-int scan_tokens_for_pipeline(parse_state_t *ps)
+bool scan_tokens_for_pipeline(parse_state_t *ps)
 {
-  struct Token *current = ps->tokens_list;
-
-  while (current != NULL)
-  {
-    if (current->type == TT_PIPE)
-      return 1;
-
-    current = current->next;
+  list_iterator_t *it = list_iterator_create(ps->tokens);
+  while (list_iterator_has_next(it)) {
+    if (((token_t*) list_iterator_next(it))->type == TT_PIPE) {
+      return true;
+    }
   }
 
-  return 0;
+  return false;
 }
 
-node_type_e scan_tokens_for_node_type(parse_state_t *ps)
+int scan_tokens_for_next_node_type(parse_state_t *ps)
 {
-  switch (ps->tokens_list->type) {
+  token_t *token = peek(ps);
+  if (token == NULL) {
+    errln("Next token is NULL");
+    return -1;
+  }
+
+  switch (token->type) {
     case TT_IF:
-      return NT_IF;
+      ps->type = NT_IF;
+      break;
     case TT_WHILE:
-      return NT_WHILE;
+      ps->type = NT_WHILE;
+      break;
     case TT_CASE:
-      return NT_CASE;
+      ps->type = NT_CASE;
+      break;
     case TT_FUNCTION:
-      return NT_FUNCTION;
-    case TT_TEXT:
-      if (scan_tokens_for_andor(ps))
-        return NT_ANDOR;
+      ps->type = NT_FUNCTION;
+      break;
+    case TT_WORD:
+      if (scan_tokens_for_andor(ps)) {
+        ps->type = NT_ANDOR;
+        break;
+      }
 
-      if (scan_tokens_for_pipeline(ps))
-        return NT_PIPELINE;
+      if (scan_tokens_for_pipeline(ps)) {
+        ps->type = NT_PIPELINE;
+        break;
+      }
 
-      return NT_SIMPLE_COMMAND;
+      ps->type = NT_SIMPLE_COMMAND;
+      break;
     default:
       errln("Illegal symbol found");
-      return NT_ERROR;
+      return -1;
   }
+
+  return 0;
 }
 
 tree_t *parse(list_t *tokens)
 {
   tree_t *tree = xcalloc(1, sizeof(tree_t));
-  node_t *head_node = NULL, *current = NULL;
+  tree->nodes = list_create();
+
   parse_state_t ps = {
     .tokens = tokens,
-    .type = NT_ERROR,
+    .type = NT_SIMPLE_COMMAND,
     .index = 0,
   };
 
 
-  token_t *token = NULL;
-  for (int i = 0; i < list_size(ps.tokens); i++) { }
-  while (ps.tokens_list != NULL) {
-    if ((ps.type = scan_tokens_for_node_type(&ps)) == NT_ERROR) {
+//  token_t *token = NULL;
+//  list_iterator_t *it = list_iterator_create(ps.tokens);
+//  while (list_iterator_has_next(it)) {
+//    token = (token_t*) list_iterator_next(it);
+//  }
+
+  node_t *node = NULL;
+
+  while (list_size(ps.tokens) > 0) {
+    if (scan_tokens_for_next_node_type(&ps) == -1) {
       return NULL;
     }
 
-    if (head_node == NULL) {
-      head_node = current = parse_to_node(&ps);
-    } else {
-      current->next = parse_to_node(&ps);
-      current = current->next;
+    if ((node = parse_to_node(&ps)) == NULL) {
+      return NULL;
     }
+
+    list_append(tree->nodes, node);
   }
 
-  tree->nodes = head_node;
+//  while (ps.tokens != NULL) {
+//    if (head_node == NULL) {
+//      head_node = current = parse_to_node(&ps);
+//    } else {
+//      current->next = parse_to_node(&ps);
+//      current = current->next;
+//    }
+//  }
+
   return tree;
 }
 
